@@ -77,7 +77,7 @@ public class BluetoothServerThread extends Thread{
                         }
                     });
 
-                    serverSocket.close(); //maybe?
+                    //serverSocket.close(); //maybe?
                     //waiting = false;
                 }
             } catch (IOException e){

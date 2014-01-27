@@ -13,7 +13,7 @@ public class ProcessThread extends Thread {
 
 
     private MainActivity act;
-    final static int WAIT_TIME = 50000;
+    final static int WAIT_TIME = 25000;
     private boolean waiting;
 
     public ProcessThread(MainActivity act){
@@ -27,7 +27,7 @@ public class ProcessThread extends Thread {
         Log.d(MainActivity.DEBUG,"Starting Process Thread");
         waiting = true;
         while(waiting){
-            act.sendMessageToAll(""+System.currentTimeMillis());
+            act.sendMessageToAll(""+act.getBluetoothAdapter().getAddress()+": "+System.currentTimeMillis()/1000);
             try {
                 Thread.sleep(WAIT_TIME);
             } catch (InterruptedException e) {

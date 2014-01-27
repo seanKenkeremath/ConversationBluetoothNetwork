@@ -25,7 +25,7 @@ public class BTOutboundConnectionThread extends Thread{
         Log.d(MainActivity.DEBUG,"Creating outbound connection thread to: " + socket.getRemoteDevice().getAddress());
         this.act = activity;
         this.socket = socket;
-        String testMessage = INIT_MESSAGE + socket.getRemoteDevice().getAddress();
+        String testMessage = INIT_MESSAGE + act.getBluetoothAdapter().getAddress();
         queue = new LinkedList<byte[]>();
         queueMessage(testMessage.getBytes());
 

@@ -35,7 +35,7 @@ public class MainActivity extends Activity {
 
     BluetoothAdapter adapt;
     private HashSet<BluetoothDevice> pairedDevices;
-    private LinkedList<BluetoothDevice> toConnect;
+    private HashSet<BluetoothDevice> toConnect;
     private ArrayList<BTOutboundConnectionThread> outThreads;
     private ArrayList<BTInboundConnectionThread> inThreads;
 
@@ -59,7 +59,7 @@ public class MainActivity extends Activity {
         pairedDevices = new HashSet<BluetoothDevice>();
         outThreads = new ArrayList<BTOutboundConnectionThread>();
         inThreads = new ArrayList<BTInboundConnectionThread>();
-        toConnect = new LinkedList<BluetoothDevice>();
+        toConnect = new HashSet<BluetoothDevice>();
 
 
         timeButton.setOnClickListener(new View.OnClickListener(){
@@ -114,7 +114,7 @@ public class MainActivity extends Activity {
                     if (device.getName().equals(BLUETOOTH_ADAPTER_NAME) && !pairedDevices.contains(device)){
                         Log.d(DEBUG,"New Device: " + device.getName() + ": "+device.getAddress());
                         deviceList+=device.getName()+ ": " + device.getAddress()+"\n";
-                        toConnect.addLast(device);
+                        toConnect.add(device);
 
                     }
 
@@ -164,6 +164,10 @@ public class MainActivity extends Activity {
         pairedDevices.remove(device);
     }
 
+    public BluetoothAdapter getBluetoothAdapter(){
+        return adapt;
+    }
+
     public void addInboundThread(BTInboundConnectionThread thread){
         inThreads.add(thread);
         thread.start();
@@ -198,6 +202,8 @@ public class MainActivity extends Activity {
             task.execute(device);
 
         }
+
+        toConnect.clear();
     }
 
     private void enableBluetooth(){
