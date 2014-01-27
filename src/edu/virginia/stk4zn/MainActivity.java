@@ -42,6 +42,7 @@ public class MainActivity extends Activity {
     private BroadcastReceiver discoveryReceiver;
     private BroadcastReceiver discoveryEnder;
     private BluetoothServerThread serverThread;
+    private ProcessThread processThread;
     private TextView mainText;
     private TextView messageText;
     private ArrayList<String> messages;
@@ -65,8 +66,7 @@ public class MainActivity extends Activity {
 
             @Override
             public void onClick(View v) {
-                Log.d(DEBUG,"Sending Time :" + System.currentTimeMillis()+ " To all " + pairedDevices.size() + " devices");
-                sendMessageToAll("" + System.currentTimeMillis());
+                Log.d(DEBUG,pairedDevices.size() + " devices, Threads: " + Thread.activeCount());
             }
         });
 
@@ -80,6 +80,7 @@ public class MainActivity extends Activity {
         });
 
         initBluetooth();
+        startProcessing();
     }
 
     public void initBluetooth(){
@@ -175,8 +176,19 @@ public class MainActivity extends Activity {
 
     private void hostConnection(){
         adapt.setName(BLUETOOTH_ADAPTER_NAME);
+        if (serverThread!=null){
+            serverThread.cancel();
+        }
         serverThread = new BluetoothServerThread(this, adapt);
         serverThread.start();
+    }
+
+    private void startProcessing(){
+        if (processThread!=null){
+            processThread.cancel();
+        }
+        processThread = new ProcessThread(this);
+        processThread.start();
     }
 
     private void connectDevicesInQueue(){
@@ -212,13 +224,20 @@ public class MainActivity extends Activity {
     }
 
     @Override
+    protected void onPause(){
+        super.onPause();
+
+    }
+
+    @Override
     protected void onDestroy(){
         super.onDestroy();
         Log.d(DEBUG, "ON DESTROY");
         this.unregisterReceiver(discoveryReceiver);
         this.unregisterReceiver(discoveryEnder);
         //destroy thread
-        serverThread.cancel(); 
+        processThread.cancel();
+        serverThread.cancel();
         for (BTOutboundConnectionThread thread: outThreads){
             try {
                 thread.getSocket().close();

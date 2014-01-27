@@ -77,6 +77,7 @@ public class BTInboundConnectionThread extends Thread{
         } catch (IOException e) {
             Log.d(MainActivity.DEBUG, "IO exception on receipt");
             act.removeDevice(getDevice());
+            cancel();
         }
 
 
@@ -102,6 +103,8 @@ public class BTInboundConnectionThread extends Thread{
 
 
     public void cancel() {
+        Log.d(MainActivity.DEBUG, "Killing inbound thread: " + socket.getRemoteDevice().getAddress());
+
         waiting = false;
         try {
             socket.close();
@@ -109,6 +112,7 @@ public class BTInboundConnectionThread extends Thread{
         } catch (IOException e) {
             Log.d(MainActivity.DEBUG, "Failed to close socket: " + socket.getRemoteDevice().getAddress());
         }
+
     }
 
 

@@ -8,7 +8,7 @@
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:id="@+id/mainText"
-            android:text="Hello World, MainActivity"
+            android:text=""
             />
     <Button
             android:layout_width="wrap_content"
@@ -18,14 +18,14 @@
 
     <TextView
             android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="300dp"
             android:id="@+id/messageText"
             android:text=""
             />
     <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Send Time"
+            android:text="Status"
             android:id="@+id/timeButton" android:layout_gravity="right"/>
 </LinearLayout>
 

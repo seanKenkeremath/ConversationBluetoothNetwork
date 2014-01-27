@@ -19,12 +19,13 @@ public class BTOutboundConnectionThread extends Thread{
     LinkedList<byte[]> queue;
     private MainActivity act;
     private boolean waiting;
+    final static String INIT_MESSAGE = "CONNECTED: ";
 
     public BTOutboundConnectionThread(MainActivity activity, BluetoothSocket socket){
         Log.d(MainActivity.DEBUG,"Creating outbound connection thread to: " + socket.getRemoteDevice().getAddress());
         this.act = activity;
         this.socket = socket;
-        String testMessage = "Test Message";
+        String testMessage = INIT_MESSAGE + socket.getRemoteDevice().getAddress();
         queue = new LinkedList<byte[]>();
         queueMessage(testMessage.getBytes());
 
@@ -64,6 +65,7 @@ public class BTOutboundConnectionThread extends Thread{
                 } catch (IOException e) {
                     Log.d(MainActivity.DEBUG, "failed to write to: " + socket.getRemoteDevice().getAddress());
                     act.removeDevice(getDevice());
+                    cancel();
                 }
             }
         }
@@ -93,6 +95,8 @@ public class BTOutboundConnectionThread extends Thread{
 
 
     public void cancel() {
+        Log.d(MainActivity.DEBUG, "Killing outbound thread: " + socket.getRemoteDevice().getAddress());
+
         waiting = false;
         try {
             socket.close();
@@ -100,6 +104,7 @@ public class BTOutboundConnectionThread extends Thread{
         } catch (IOException e) {
             Log.d(MainActivity.DEBUG, "Failed to close socket: " + socket.getRemoteDevice().getAddress());
         }
+
     }
 
     public void queueMessage(byte[] message){

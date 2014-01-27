@@ -30,6 +30,8 @@ public class BluetoothServerThread extends Thread{
     private boolean waiting;
 
     public BluetoothServerThread(MainActivity activity, BluetoothAdapter adapter){
+        Log.d(MainActivity.DEBUG,"Server thread created");
+
         this.adapt = adapter;
         this.act = activity;
         this.uiHandler = new Handler(Looper.getMainLooper());
@@ -75,11 +77,11 @@ public class BluetoothServerThread extends Thread{
                         }
                     });
 
-                    //serverSocket.close();
+                    serverSocket.close(); //maybe?
                     //waiting = false;
                 }
             } catch (IOException e){
-                waiting = false;
+                cancel();
                 Log.d(MainActivity.DEBUG,"Error Hosting Connection");
             }
 
@@ -90,13 +92,14 @@ public class BluetoothServerThread extends Thread{
 
 
     public void cancel() {
+        waiting = false;
         try {
-            waiting = false;
             serverSocket.close();
         } catch (IOException e) {
             Log.d(MainActivity.DEBUG,"Failed to cancel server thread");
 
         }
+
     }
 
 
