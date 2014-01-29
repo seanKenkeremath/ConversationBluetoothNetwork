@@ -9,6 +9,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -27,22 +28,18 @@ public class MainActivity extends Activity {
     final static int REQUEST_ENABLE_BT = 333;
     final static String BLUETOOTH_ADAPTER_NAME = "SOCINT";
     final static String DEBUG = "SOCDEB";
-    String deviceList = "";
 
-    Button discButton;
     Button timeButton;
 
 
     BluetoothAdapter adapt;
-    private HashSet<BluetoothDevice> pairedDevices;
-    private HashSet<BluetoothDevice> toConnect;
-    private ArrayList<BTOutboundConnectionThread> outThreads;
-    private ArrayList<BTInboundConnectionThread> inThreads;
+    private HashSet<PairedDevice> pairedDevices;
+    private Handler handler;
 
     private BroadcastReceiver discoveryReceiver;
-    private BroadcastReceiver discoveryEnder;
     private BluetoothServerThread serverThread;
     private ProcessThread processThread;
+    private BTDiscoveryService discoveryThread;
     private TextView mainText;
     private TextView messageText;
     private ArrayList<String> messages;
@@ -51,33 +48,22 @@ public class MainActivity extends Activity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
-        discButton = (Button) findViewById(R.id.discButton);
+        handler = new Handler();
         timeButton = (Button) findViewById(R.id.timeButton);
         mainText = (TextView) findViewById(R.id.mainText);
         messageText = (TextView) findViewById(R.id.messageText);
         messages = new ArrayList<String>();
-        pairedDevices = new HashSet<BluetoothDevice>();
-        outThreads = new ArrayList<BTOutboundConnectionThread>();
-        inThreads = new ArrayList<BTInboundConnectionThread>();
-        toConnect = new HashSet<BluetoothDevice>();
+        pairedDevices = new HashSet<PairedDevice>();
 
 
         timeButton.setOnClickListener(new View.OnClickListener(){
 
             @Override
             public void onClick(View v) {
-                Log.d(DEBUG,pairedDevices.size() + " devices, Threads: " + Thread.activeCount());
+                Log.d(DEBUG, pairedDevices.size() + " devices, Threads: " + Thread.activeCount());
             }
         });
 
-        discButton.setOnClickListener(new View.OnClickListener(){
-
-            @Override
-            public void onClick(View v) {
-                Log.d(DEBUG, "Discovering Devices..");
-                discoverDevices();
-            }
-        });
 
         initBluetooth();
         startProcessing();
@@ -93,16 +79,6 @@ public class MainActivity extends Activity {
             return;
         }
 
-        discoveryEnder = new BroadcastReceiver(){
-
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                if (intent.getAction().equals(BluetoothAdapter.ACTION_DISCOVERY_FINISHED)){
-                    Log.d(DEBUG, "Discovery ended: ");
-                    connectDevicesInQueue();
-                }
-            }
-        };
 
         discoveryReceiver = new BroadcastReceiver(){
 
@@ -111,24 +87,31 @@ public class MainActivity extends Activity {
                 if (intent.getAction().equals(BluetoothDevice.ACTION_FOUND)){
                     BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                     Log.d(DEBUG,"Discovered Device: " + device.getName() + ": "+device.getAddress());
-                    if (device.getName().equals(BLUETOOTH_ADAPTER_NAME) && !pairedDevices.contains(device)){
-                        Log.d(DEBUG,"New Device: " + device.getName() + ": "+device.getAddress());
-                        deviceList+=device.getName()+ ": " + device.getAddress()+"\n";
-                        toConnect.add(device);
 
+                    boolean contains = false;
+
+                    for (PairedDevice connectedDevice: pairedDevices){
+                        if (connectedDevice.getAddress().equals(device.getAddress())){
+                            contains = true;
+                        }
                     }
 
-                    mainText.setText(deviceList);
+                    if (device.getName().equals(BLUETOOTH_ADAPTER_NAME) && !contains){
+                        Log.d(DEBUG,"New Device: " + device.getName() + ": "+device.getAddress());
+                        AsyncConnectTask task = new AsyncConnectTask(MainActivity.this);
+                        task.execute(device);
+                    }
+
                 }
 
             }
         };
 
+
+
         IntentFilter discoveryFilter = new IntentFilter(BluetoothDevice.ACTION_FOUND); //?
         registerReceiver(discoveryReceiver, discoveryFilter);
 
-        IntentFilter discoveryEndedFilter = new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
-        registerReceiver(discoveryEnder,discoveryEndedFilter);
 
         if (!adapt.isEnabled()){
             //bluetooth not enabled
@@ -137,48 +120,70 @@ public class MainActivity extends Activity {
         }
 
         makeDiscoverable(0);
+        startDiscoveryThread();
         hostConnection();
 
     }
 
+    public void displayPairedDevices(){
+        String display ="";
+        for (PairedDevice device: pairedDevices){
+            display+=device.getAddress()+"\n";
+        }
+        mainText.setText(display);
+    }
+    public void startDiscovery(){
+        if (adapt.isDiscovering()){
+            cancelDiscovery();
+        }
+
+            Log.d(DEBUG,"Starting Discovery..");
+            adapt.startDiscovery();
+
+    }
+    public void cancelDiscovery(){
+        Log.d(DEBUG,"Canceling Discovery..");
+        adapt.cancelDiscovery();
+    }
+
+
     public void sendMessageToAll(String message){
-        for (BTOutboundConnectionThread thread: outThreads){
-            thread.queueMessage(message.getBytes());
+        for (PairedDevice device: pairedDevices){
+            device.queueMessage(message.getBytes());
         }
     }
 
     public void getMessage(String message){
         messages.add(message);
         String displayMessage = "";
-        for (String concat: messages){
-            displayMessage+=concat+"\n";
+        int numMessages = 10;
+        if (numMessages>messages.size()){
+            numMessages=messages.size();
         }
+        for (int i =0; i < numMessages;i++){
+            displayMessage += messages.get(messages.size()-numMessages+i) +"\n";
+        }
+
         messageText.setText(displayMessage);
     }
 
-    public void addDevice(BluetoothDevice device){
+    public void addDevice(PairedDevice device){
         pairedDevices.add(device);
+        device.startThreads();
+
     }
 
-    public void removeDevice(BluetoothDevice device){
+    public void removeDevice(PairedDevice device){
         pairedDevices.remove(device);
+        getMessage("DISCONNECT: " + device.getAddress());
     }
 
     public BluetoothAdapter getBluetoothAdapter(){
         return adapt;
     }
 
-    public void addInboundThread(BTInboundConnectionThread thread){
-        inThreads.add(thread);
-        thread.start();
-    }
 
-    public void addOutboundThread(BTOutboundConnectionThread thread){
-        outThreads.add(thread);
-        thread.start();
-    }
-
-    private void hostConnection(){
+    public void hostConnection(){
         adapt.setName(BLUETOOTH_ADAPTER_NAME);
         if (serverThread!=null){
             serverThread.cancel();
@@ -195,15 +200,13 @@ public class MainActivity extends Activity {
         processThread.start();
     }
 
-    private void connectDevicesInQueue(){
-        Log.d(DEBUG,"Attempting connections to all " + toConnect.size() + " devices in queue");
-        for (BluetoothDevice device: toConnect){
-            AsyncConnectTask task = new AsyncConnectTask(this);
-            task.execute(device);
-
+    private void startDiscoveryThread(){
+        if (discoveryThread!=null){
+            discoveryThread.cancel();
         }
+        discoveryThread = new BTDiscoveryService(this);
+        discoveryThread.start();
 
-        toConnect.clear();
     }
 
     private void enableBluetooth(){
@@ -211,28 +214,25 @@ public class MainActivity extends Activity {
         startActivityForResult(enableBluetooth,REQUEST_ENABLE_BT);
     }
 
-    private void discoverDevices(){
-        adapt.cancelDiscovery();
-        deviceList = "";
-        adapt.startDiscovery();
-    }
 
     private void makeDiscoverable(int duration){
         Log.d(DEBUG, "Setting Discoverable..");
         Intent makeDiscoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
         makeDiscoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, duration);
         startActivity(makeDiscoverableIntent);
+
+
     }
 
     @Override
     protected void onResume(){
         super.onResume();
+
     }
 
     @Override
     protected void onPause(){
         super.onPause();
-
     }
 
     @Override
@@ -240,29 +240,13 @@ public class MainActivity extends Activity {
         super.onDestroy();
         Log.d(DEBUG, "ON DESTROY");
         this.unregisterReceiver(discoveryReceiver);
-        this.unregisterReceiver(discoveryEnder);
-        //destroy thread
+        discoveryThread.cancel();
         processThread.cancel();
         serverThread.cancel();
-        for (BTOutboundConnectionThread thread: outThreads){
-            try {
-                thread.getSocket().close();
-                Log.d(DEBUG,"Closed socket " + thread.getDevice());
-            } catch (IOException e) {
-                Log.d(DEBUG,"Could not close socket " + thread.getDevice());
-            }
-            thread.cancel();
-        }
-
-        for (BTInboundConnectionThread thread: inThreads){
-            try {
-                thread.getSocket().close();
-                Log.d(DEBUG,"Closed socket " + thread.getDevice());
-            } catch (IOException e) {
-                Log.d(DEBUG, "Could not close socket " + thread.getDevice());
-            }
-            thread.cancel();
-
+        adapt.cancelDiscovery();
+        adapt.setName("NOT" + BLUETOOTH_ADAPTER_NAME);
+        for (PairedDevice device: pairedDevices){
+            device.disconnect();
         }
     }
 
@@ -273,10 +257,16 @@ public class MainActivity extends Activity {
                 if (resultCode == RESULT_OK) {
                     Log.d(DEBUG, "Successfully enabled bluetooth");
                     makeDiscoverable(0);
+                    startDiscoveryThread();
                     hostConnection();
                 } else{
                     Log.d(DEBUG,"Failed to enable bluetooth");
                 }
             }
     }
+
+    public Handler getHandler(){
+        return handler;
+    }
+
 }

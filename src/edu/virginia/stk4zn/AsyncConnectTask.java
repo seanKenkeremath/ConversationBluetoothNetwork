@@ -2,6 +2,7 @@ package edu.virginia.stk4zn;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.util.Log;
 
@@ -20,6 +21,20 @@ public class AsyncConnectTask extends AsyncTask<BluetoothDevice, Integer, Boolea
     }
 
     @Override
+    protected void onPostExecute(Boolean result) {
+        if (result){
+            act.startDiscovery();
+        }
+        act.displayPairedDevices();
+
+    }
+
+    @Override
+    protected void onPreExecute() {
+        act.cancelDiscovery();
+    }
+
+    @Override
     protected Boolean doInBackground(BluetoothDevice... devices) {
 
         BluetoothDevice device = devices[0];
@@ -32,25 +47,25 @@ public class AsyncConnectTask extends AsyncTask<BluetoothDevice, Integer, Boolea
 
                 if (socket!=null){
 
+
                     try {
                         socket.connect();
                     } catch (IOException connectException) {
                         Log.d(MainActivity.DEBUG, "Could not connect to: " + socket.getRemoteDevice().getAddress());
                         try {
-                            act.removeDevice(device);
                             socket.close();
                         } catch (IOException closeException) {
                             Log.d(MainActivity.DEBUG, "Could not close socket: " + socket.getRemoteDevice().getAddress());
 
                         }
+                        return false;
                     }
 
-                    BTOutboundConnectionThread outThread = new BTOutboundConnectionThread(act, socket);
-                    BTInboundConnectionThread inThread = new BTInboundConnectionThread(act, socket);
+                    PairedDevice connectedDevice = new PairedDevice(act, socket);
 
-                    act.addDevice(device);
-                    act.addOutboundThread(outThread);
-                    act.addInboundThread(inThread);
+
+                    act.addDevice(connectedDevice);
+
                 }
 
             } catch (IOException e) {

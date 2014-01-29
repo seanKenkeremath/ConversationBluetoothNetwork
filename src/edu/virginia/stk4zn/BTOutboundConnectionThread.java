@@ -16,13 +16,15 @@ import java.util.LinkedList;
 public class BTOutboundConnectionThread extends Thread{
 
     private BluetoothSocket socket;
+    private PairedDevice device;
     LinkedList<byte[]> queue;
     private MainActivity act;
     private boolean waiting;
     final static String INIT_MESSAGE = "CONNECTED: ";
 
-    public BTOutboundConnectionThread(MainActivity activity, BluetoothSocket socket){
+    public BTOutboundConnectionThread(MainActivity activity, PairedDevice device, BluetoothSocket socket){
         Log.d(MainActivity.DEBUG,"Creating outbound connection thread to: " + socket.getRemoteDevice().getAddress());
+        this.device = device;
         this.act = activity;
         this.socket = socket;
         String testMessage = INIT_MESSAGE + act.getBluetoothAdapter().getAddress();
@@ -34,22 +36,6 @@ public class BTOutboundConnectionThread extends Thread{
     @Override
     public void run(){
         Log.d(MainActivity.DEBUG,"Running outbound connection thread to: " + socket.getRemoteDevice().getAddress());
-
-        /*
-        try {
-            socket.connect();
-        } catch (IOException connectException) {
-            Log.d(MainActivity.DEBUG, "Could not connect to: " + socket.getRemoteDevice().getAddress());
-            try {
-                act.removeDevice(getDevice());
-                socket.close();
-            } catch (IOException closeException) {
-                Log.d(MainActivity.DEBUG, "Could not close socket: " + socket.getRemoteDevice().getAddress());
-
-            }
-            return;
-        }
-        */
 
         waiting = true;
 
@@ -64,8 +50,7 @@ public class BTOutboundConnectionThread extends Thread{
                     queue.poll();
                 } catch (IOException e) {
                     Log.d(MainActivity.DEBUG, "failed to write to: " + socket.getRemoteDevice().getAddress());
-                    act.removeDevice(getDevice());
-                    cancel();
+                    device.disconnect();
                 }
             }
         }
@@ -74,36 +59,17 @@ public class BTOutboundConnectionThread extends Thread{
     }
 
 
-    public BluetoothSocket getSocket(){
-        return socket;
-    }
-
-    public BluetoothDevice getDevice(){
-        return socket.getRemoteDevice();
-    }
-
-
-    @Override
-    public boolean equals(Object o){
-
-        if (o instanceof BTOutboundConnectionThread){
-            return ((BTOutboundConnectionThread) o).getDevice().getAddress().equals(getDevice().getAddress());
-        }
-        return false;
-    }
-
 
 
     public void cancel() {
         Log.d(MainActivity.DEBUG, "Killing outbound thread: " + socket.getRemoteDevice().getAddress());
-
         waiting = false;
         try {
-            socket.close();
-            act.removeDevice(getDevice());
+            socket.getOutputStream().close();
         } catch (IOException e) {
-            Log.d(MainActivity.DEBUG, "Failed to close socket: " + socket.getRemoteDevice().getAddress());
+            Log.d(MainActivity.DEBUG, "Failed closing output stream: " + socket.getRemoteDevice().getAddress());
         }
+
 
     }
 

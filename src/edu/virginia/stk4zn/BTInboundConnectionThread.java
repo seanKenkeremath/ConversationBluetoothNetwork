@@ -21,11 +21,12 @@ public class BTInboundConnectionThread extends Thread{
     private BluetoothSocket socket;
     private MainActivity act;
     private boolean waiting;
+    private PairedDevice device;
     private Handler uiHandler;
 
-    public BTInboundConnectionThread(MainActivity activity,  BluetoothSocket socket){
+    public BTInboundConnectionThread(MainActivity activity, PairedDevice device, BluetoothSocket socket){
         Log.d(MainActivity.DEBUG,"Creating inbound connection thread to: " + socket.getRemoteDevice().getAddress());
-
+        this.device = device;
         this.act = activity;
         this.socket = socket;
         this.uiHandler = new Handler(Looper.getMainLooper());
@@ -76,28 +77,11 @@ public class BTInboundConnectionThread extends Thread{
             }
         } catch (IOException e) {
             Log.d(MainActivity.DEBUG, "IO exception on receipt");
-            act.removeDevice(getDevice());
-            cancel();
+            device.disconnect();
+
         }
 
 
-    }
-
-    @Override
-    public boolean equals(Object o){
-
-        if (o instanceof BTInboundConnectionThread){
-            return ((BTInboundConnectionThread) o).getDevice().getAddress().equals(getDevice().getAddress());
-        }
-        return false;
-    }
-
-    public BluetoothSocket getSocket(){
-        return socket;
-    }
-
-    public BluetoothDevice getDevice(){
-        return socket.getRemoteDevice();
     }
 
 
@@ -107,10 +91,9 @@ public class BTInboundConnectionThread extends Thread{
 
         waiting = false;
         try {
-            socket.close();
-            act.removeDevice(getDevice());
+            socket.getInputStream().close();
         } catch (IOException e) {
-            Log.d(MainActivity.DEBUG, "Failed to close socket: " + socket.getRemoteDevice().getAddress());
+            Log.d(MainActivity.DEBUG, "Failed to close Input Stream from: " + socket.getRemoteDevice().getAddress());
         }
 
     }

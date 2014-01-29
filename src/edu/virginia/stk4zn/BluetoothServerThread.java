@@ -1,8 +1,6 @@
 package edu.virginia.stk4zn;
 
-import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
 import android.os.Handler;
@@ -23,7 +21,6 @@ public class BluetoothServerThread extends Thread{
     final static String SERVICE_NAME  = "SOCIAL_INTERACTION";
     private final static String UUIDString = "662ab3f4-c79c-11d1-3a37-a500712cf000";
     public final static UUID SERVICE_UUID = UUID.fromString(UUIDString);
-    private Handler uiHandler;
 
 
 
@@ -34,7 +31,6 @@ public class BluetoothServerThread extends Thread{
 
         this.adapt = adapter;
         this.act = activity;
-        this.uiHandler = new Handler(Looper.getMainLooper());
 
         try {
             serverSocket = adapt.listenUsingRfcommWithServiceRecord(SERVICE_NAME, SERVICE_UUID);
@@ -63,22 +59,8 @@ public class BluetoothServerThread extends Thread{
                 socket = serverSocket.accept();
                 if (socket!=null){
                     Log.d(MainActivity.DEBUG,"connection made to "+ socket.getRemoteDevice().getAddress());
-                    act.addDevice(socket.getRemoteDevice());
-
-                    final BTInboundConnectionThread inThread = new BTInboundConnectionThread(act, socket);
-                    final BTOutboundConnectionThread outThread = new BTOutboundConnectionThread(act, socket);
-
-                    uiHandler.post(new Runnable(){
-
-                        @Override
-                        public void run() {
-                            act.addOutboundThread(outThread);
-                            act.addInboundThread(inThread);
-                        }
-                    });
-
-                    //serverSocket.close(); //maybe?
-                    //waiting = false;
+                    PairedDevice connectedDevice = new PairedDevice(act,socket);
+                    act.addDevice(connectedDevice);
                 }
             } catch (IOException e){
                 cancel();

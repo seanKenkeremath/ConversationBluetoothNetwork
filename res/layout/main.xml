@@ -10,11 +10,6 @@
             android:id="@+id/mainText"
             android:text=""
             />
-    <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Discover"
-            android:id="@+id/discButton" android:layout_gravity="right"/>
 
     <TextView
             android:layout_width="fill_parent"
