@@ -1,10 +1,16 @@
 package edu.virginia.stk4zn;
 
-import android.app.IntentService;
-import android.content.Intent;
+import android.media.AudioFormat;
+import android.media.AudioRecord;
+import android.media.MediaRecorder;
 import android.util.Log;
+import audio.Wave;
+import audio.WaveHeader;
+import audio.feature.MFCCFeatureExtract;
+import audio.feature.Statistics;
+import audio.feature.WindowFeature;
 
-import java.io.IOException;
+import java.util.List;
 
 /**
  * Created by sean on 1/24/14.
@@ -13,32 +19,213 @@ public class ProcessThread extends Thread {
 
 
     private MainActivity act;
-    final static int WAIT_TIME = 25000;
     private boolean waiting;
 
-    public ProcessThread(MainActivity act){
+    private AudioRecord recorder = null;
+    private int bufferSize = 0;
+    private byte audioData[] = null;
+    private WaveHeader header;
+    private static final int RECORDER_BPP = 16;
+    private static final int RECORDER_SAMPLERATE = 44100; //8000;
+    private static final int RECORDER_CHANNELS = AudioFormat.CHANNEL_IN_MONO;
+    private static final int RECORDER_AUDIO_ENCODING = AudioFormat.ENCODING_PCM_16BIT;
+    private static final int CHANNELS = 1;
+    private static final float BUFFER_SECONDS = 5f;
+    private static final int BUFFER_SIZE = (int) (RECORDER_SAMPLERATE*BUFFER_SECONDS);
+
+    private static final long BYTE_RATE = RECORDER_BPP * RECORDER_SAMPLERATE * CHANNELS/8;
+
+    private long dt = 0;
+
+    private String displayCoeffs;
+
+    public ProcessThread(MainActivity act) {
+        super("Analyze Audio Thread");
         this.act = act;
-
+        //bufferSize = AudioRecord.getMinBufferSize(RECORDER_SAMPLERATE, RECORDER_CHANNELS, RECORDER_AUDIO_ENCODING);
+        bufferSize = BUFFER_SIZE;
+        Log.d(MainActivity.DEBUG, "BufferSize " + bufferSize);
+        audioData = new byte[bufferSize];
+        header = new WaveHeader(getWaveFileHeader(bufferSize, bufferSize+36,
+                RECORDER_SAMPLERATE, CHANNELS, BYTE_RATE));
+        recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
+                RECORDER_SAMPLERATE, RECORDER_CHANNELS, RECORDER_AUDIO_ENCODING, bufferSize);
     }
-
 
     @Override
     public void run(){
-        Log.d(MainActivity.DEBUG,"Starting Process Thread");
+
+        startRecording();
+
         waiting = true;
-        while(waiting){
-            act.sendMessageToAll(""+act.getBluetoothAdapter().getAddress()+": "+System.currentTimeMillis()/1000);
-            try {
-                Thread.sleep(WAIT_TIME);
-            } catch (InterruptedException e) {
-                Log.d(MainActivity.DEBUG, "Process thread interuptted");
-            }
+
+        int numberBytes;
+        long t1, t2;
+
+            while(waiting) {
+                try{
+                    t1 = System.currentTimeMillis();
+                numberBytes = recorder.read(audioData, 0, bufferSize);
+                if(numberBytes != AudioRecord.ERROR_INVALID_OPERATION) {
+                    analyzeAudio();
+                }
+                t2 = System.currentTimeMillis();
+                dt = t2 - t1;
+
+            }catch(Exception ex) {
+                    ex.printStackTrace();
+                }
         }
 
+
     }
+
+
+
+    public void startRecording(){
+        Log.d(MainActivity.DEBUG,"Starting recording...");
+        recorder.startRecording();
+    }
+
+    public void stopRecording(){
+        recorder.stop();
+        recorder.release();
+        //recorder = null;
+    }
+
+
+    private byte[] getWaveFileHeader(long totalAudioLen,
+                                     long totalDataLen, long longSampleRate, int channels,
+                                     long byteRate){
+
+        byte[] header = new byte[44];
+
+        header[0] = 'R';  // RIFF/WAVE header
+        header[1] = 'I';
+        header[2] = 'F';
+        header[3] = 'F';
+        header[4] = (byte) (totalDataLen & 0xff);
+        header[5] = (byte) ((totalDataLen >> 8) & 0xff);
+        header[6] = (byte) ((totalDataLen >> 16) & 0xff);
+        header[7] = (byte) ((totalDataLen >> 24) & 0xff);
+        header[8] = 'W';
+        header[9] = 'A';
+        header[10] = 'V';
+        header[11] = 'E';
+        header[12] = 'f';  // 'fmt ' chunk
+        header[13] = 'm';
+        header[14] = 't';
+        header[15] = ' ';
+        header[16] = 16;  // 4 bytes: size of 'fmt ' chunk
+        header[17] = 0;
+        header[18] = 0;
+        header[19] = 0;
+        header[20] = 1;  // format = 1
+        header[21] = 0;
+        header[22] = (byte) channels;
+        header[23] = 0;
+        header[24] = (byte) (longSampleRate & 0xff);
+        header[25] = (byte) ((longSampleRate >> 8) & 0xff);
+        header[26] = (byte) ((longSampleRate >> 16) & 0xff);
+        header[27] = (byte) ((longSampleRate >> 24) & 0xff);
+        header[28] = (byte) (byteRate & 0xff);
+        header[29] = (byte) ((byteRate >> 8) & 0xff);
+        header[30] = (byte) ((byteRate >> 16) & 0xff);
+        header[31] = (byte) ((byteRate >> 24) & 0xff);
+        header[32] = (byte) (channels * RECORDER_BPP / 8);  // block align
+        header[33] = 0;
+        header[34] = RECORDER_BPP;  // bits per sample
+        header[35] = 0;
+        header[36] = 'd';
+        header[37] = 'a';
+        header[38] = 't';
+        header[39] = 'a';
+        header[40] = (byte) (totalAudioLen & 0xff);
+        header[41] = (byte) ((totalAudioLen >> 8) & 0xff);
+        header[42] = (byte) ((totalAudioLen >> 16) & 0xff);
+        header[43] = (byte) ((totalAudioLen >> 24) & 0xff);
+
+        return header;
+    }
+
+    private void analyzeAudio(){
+
+        //Log.d(MainActivity.DEBUG,"Analyzing..");
+        Wave storedWave = new Wave(header, audioData);
+        //Log.d(MainActivity.DEBUG, "Sample Wave Length: " + storedWave.length());
+        double[] inputSignal = storedWave.getSampleAmplitudes();
+        int Fs = storedWave.getWaveHeader().getSampleRate();
+        double Tw = 25; // analysis frame duration (ms)
+        double Ts = 10; // analysis frame shift (ms)
+        double Wl = 1; // window duration (second)
+        /*
+        Log.d(MainActivity.DEBUG,"Signal Length: " + inputSignal.length + " FS: " + Fs);
+        Log.d(MainActivity.DEBUG,"Byte Rate: " + storedWave.getWaveHeader().getByteRate());
+        Log.d(MainActivity.DEBUG,"Bits Per Sample: " + storedWave.getWaveHeader().getBitsPerSample());
+        */
+
+
+        MFCCFeatureExtract mfccFeatures = new MFCCFeatureExtract(inputSignal,
+                Tw, Ts, Fs, Wl);
+
+        /*
+		 Log.d(MainActivity.DEBUG,"12 MFCCs of each frame:");
+		 Log.d(MainActivity.DEBUG,mfccFeatures.toString()); //12 MFCC for each frame
+		 */
+
+
+        List<WindowFeature> lst = mfccFeatures.getListOfWindowFeature();
+		/*
+		 * Log.d(DEBUG_TAG,"List of Window Features:"); for(WindowFeature
+		 * wf:lst){ Log.d(DEBUG_TAG,wf.toString()); }
+		 */
+
+        if (lst.size()==0){
+            Log.d(MainActivity.DEBUG,"Failed analyzing audio");
+            return;
+        }
+
+
+        double[] coeffs = new double[39];
+        displayCoeffs = "";
+        for (int i = 0; i < 39; i++) {
+            double[] allWindows = new double[lst.size()-1];// do not count
+            // first window
+            for (int j = 1; j < lst.size(); j++) {
+
+                allWindows[j - 1] = lst.get(j).windowFeature[i][0];
+
+				//Log.d(MainActivity.DEBUG_TAG, "mean windowFeature " + i + ": "
+				//		+ lst.get(j).windowFeature[i][0]);
+
+            }
+            coeffs[i] = Statistics.mean(allWindows);
+            displayCoeffs += "mean feature " + i + ": "
+                    + coeffs[i] + "\n";
+            //Log.d(MainActivity.DEBUG, message);
+            //act.sendMessageToAll(message);
+        }
+
+        act.getHandler().post(new Runnable() {
+
+
+            @Override
+            public void run() {
+                act.displayMFCC(displayCoeffs);
+            }
+        });
+
+
+
+
+    }
+
+
 
     public void cancel() {
         Log.d(MainActivity.DEBUG, "Killing Process Thread");
+        stopRecording();
         waiting = false;
     }
+
 }

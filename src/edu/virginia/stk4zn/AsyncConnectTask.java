@@ -25,8 +25,6 @@ public class AsyncConnectTask extends AsyncTask<BluetoothDevice, Integer, Boolea
         if (result){
             act.startDiscovery();
         }
-        act.displayPairedDevices();
-
     }
 
     @Override
@@ -61,10 +59,14 @@ public class AsyncConnectTask extends AsyncTask<BluetoothDevice, Integer, Boolea
                         return false;
                     }
 
-                    PairedDevice connectedDevice = new PairedDevice(act, socket);
+                    final PairedDevice connectedDevice = new PairedDevice(act, socket);
+                    act.getHandler().post(new Runnable(){
 
-
-                    act.addDevice(connectedDevice);
+                        @Override
+                        public void run() {
+                            act.addDevice(connectedDevice);
+                        }
+                    });
 
                 }
 

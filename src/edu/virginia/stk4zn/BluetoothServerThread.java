@@ -27,6 +27,7 @@ public class BluetoothServerThread extends Thread{
     private boolean waiting;
 
     public BluetoothServerThread(MainActivity activity, BluetoothAdapter adapter){
+        super("Server Thread");
         Log.d(MainActivity.DEBUG,"Server thread created");
 
         this.adapt = adapter;
@@ -59,8 +60,16 @@ public class BluetoothServerThread extends Thread{
                 socket = serverSocket.accept();
                 if (socket!=null){
                     Log.d(MainActivity.DEBUG,"connection made to "+ socket.getRemoteDevice().getAddress());
-                    PairedDevice connectedDevice = new PairedDevice(act,socket);
-                    act.addDevice(connectedDevice);
+
+                    final PairedDevice connectedDevice = new PairedDevice(act,socket);
+                    act.getHandler().post(new Runnable() {
+
+                        @Override
+                        public void run() {
+                            act.addDevice(connectedDevice);
+
+                        }
+                    });
                 }
             } catch (IOException e){
                 cancel();

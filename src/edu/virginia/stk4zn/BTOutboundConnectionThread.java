@@ -23,6 +23,7 @@ public class BTOutboundConnectionThread extends Thread{
     final static String INIT_MESSAGE = "CONNECTED: ";
 
     public BTOutboundConnectionThread(MainActivity activity, PairedDevice device, BluetoothSocket socket){
+        super("Outbound Thread to " +device.getAddress());
         Log.d(MainActivity.DEBUG,"Creating outbound connection thread to: " + socket.getRemoteDevice().getAddress());
         this.device = device;
         this.act = activity;

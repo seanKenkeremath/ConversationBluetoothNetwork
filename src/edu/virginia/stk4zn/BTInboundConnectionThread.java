@@ -25,6 +25,7 @@ public class BTInboundConnectionThread extends Thread{
     private Handler uiHandler;
 
     public BTInboundConnectionThread(MainActivity activity, PairedDevice device, BluetoothSocket socket){
+        super("Inbound Thread from " +device.getAddress());
         Log.d(MainActivity.DEBUG,"Creating inbound connection thread to: " + socket.getRemoteDevice().getAddress());
         this.device = device;
         this.act = activity;

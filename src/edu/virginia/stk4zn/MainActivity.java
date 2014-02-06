@@ -3,7 +3,6 @@ package edu.virginia.stk4zn;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothSocket;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -15,10 +14,8 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.LinkedList;
 
 public class MainActivity extends Activity {
     /**
@@ -29,7 +26,7 @@ public class MainActivity extends Activity {
     final static String BLUETOOTH_ADAPTER_NAME = "SOCINT";
     final static String DEBUG = "SOCDEB";
 
-    Button timeButton;
+    Button statusButton;
 
 
     BluetoothAdapter adapt;
@@ -40,7 +37,8 @@ public class MainActivity extends Activity {
     private BluetoothServerThread serverThread;
     private ProcessThread processThread;
     private BTDiscoveryService discoveryThread;
-    private TextView mainText;
+    private TextView connectedText;
+    private TextView mfccText;
     private TextView messageText;
     private ArrayList<String> messages;
 
@@ -49,17 +47,23 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
         handler = new Handler();
-        timeButton = (Button) findViewById(R.id.timeButton);
-        mainText = (TextView) findViewById(R.id.mainText);
+        statusButton = (Button) findViewById(R.id.timeButton);
+        connectedText = (TextView) findViewById(R.id.connectedText);
         messageText = (TextView) findViewById(R.id.messageText);
+        mfccText = (TextView) findViewById(R.id.mfccText);
         messages = new ArrayList<String>();
         pairedDevices = new HashSet<PairedDevice>();
 
 
-        timeButton.setOnClickListener(new View.OnClickListener(){
+        statusButton.setOnClickListener(new View.OnClickListener() {
 
             @Override
             public void onClick(View v) {
+                String allThreads = "";
+                for (Thread thread: Thread.getAllStackTraces().keySet()){
+                    allThreads+=thread.getName() +"\n";
+                }
+                Log.d(DEBUG, allThreads);
                 Log.d(DEBUG, pairedDevices.size() + " devices, Threads: " + Thread.activeCount());
             }
         });
@@ -125,13 +129,19 @@ public class MainActivity extends Activity {
 
     }
 
+
     public void displayPairedDevices(){
         String display ="";
         for (PairedDevice device: pairedDevices){
             display+=device.getAddress()+"\n";
         }
-        mainText.setText(display);
+        connectedText.setText(display);
     }
+
+    public void displayMFCC(String mfcc){
+        mfccText.setText(mfcc);
+    }
+
     public void startDiscovery(){
         if (adapt.isDiscovering()){
             cancelDiscovery();
@@ -170,11 +180,13 @@ public class MainActivity extends Activity {
     public void addDevice(PairedDevice device){
         pairedDevices.add(device);
         device.startThreads();
+        displayPairedDevices();
 
     }
 
     public void removeDevice(PairedDevice device){
         pairedDevices.remove(device);
+        displayPairedDevices();
         getMessage("DISCONNECT: " + device.getAddress());
     }
 
@@ -187,6 +199,12 @@ public class MainActivity extends Activity {
         adapt.setName(BLUETOOTH_ADAPTER_NAME);
         if (serverThread!=null){
             serverThread.cancel();
+            try {
+                Log.d(DEBUG,"joining previous serverThread");
+                serverThread.join();
+            } catch (InterruptedException e) {
+                Log.d(DEBUG, "Interrupted joining serverThread");
+            }
         }
         serverThread = new BluetoothServerThread(this, adapt);
         serverThread.start();
@@ -195,6 +213,13 @@ public class MainActivity extends Activity {
     private void startProcessing(){
         if (processThread!=null){
             processThread.cancel();
+            try {
+                Log.d(DEBUG,"joining previous processThread");
+                processThread.join();
+            } catch (InterruptedException e) {
+                Log.d(DEBUG, "Interrupted joining processThread");
+
+            }
         }
         processThread = new ProcessThread(this);
         processThread.start();
@@ -203,6 +228,12 @@ public class MainActivity extends Activity {
     private void startDiscoveryThread(){
         if (discoveryThread!=null){
             discoveryThread.cancel();
+            try {
+                Log.d(DEBUG,"joining previous discoveryThread");
+                discoveryThread.join();
+            } catch (InterruptedException e) {
+                Log.d(DEBUG,"Interrupted joining discoveryThread");
+            }
         }
         discoveryThread = new BTDiscoveryService(this);
         discoveryThread.start();

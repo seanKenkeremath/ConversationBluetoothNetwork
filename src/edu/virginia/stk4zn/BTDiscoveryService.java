@@ -15,6 +15,7 @@ public class BTDiscoveryService extends Thread {
     private boolean waiting;
 
     public BTDiscoveryService(MainActivity act){
+        super("Discovery Thread");
         this.act = act;
 
     }
