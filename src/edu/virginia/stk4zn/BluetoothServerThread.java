@@ -3,8 +3,6 @@ package edu.virginia.stk4zn;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.Log;
 
 import java.io.IOException;
@@ -17,7 +15,7 @@ public class BluetoothServerThread extends Thread{
 
     private BluetoothServerSocket serverSocket;
     private BluetoothAdapter adapt;
-    private MainActivity act;
+    private ConversationActivity act;
     final static String SERVICE_NAME  = "SOCIAL_INTERACTION";
     private final static String UUIDString = "662ab3f4-c79c-11d1-3a37-a500712cf000";
     public final static UUID SERVICE_UUID = UUID.fromString(UUIDString);
@@ -26,9 +24,9 @@ public class BluetoothServerThread extends Thread{
 
     private boolean waiting;
 
-    public BluetoothServerThread(MainActivity activity, BluetoothAdapter adapter){
+    public BluetoothServerThread(ConversationActivity activity, BluetoothAdapter adapter){
         super("Server Thread");
-        Log.d(MainActivity.DEBUG,"Server thread created");
+        Log.d(ConversationActivity.DEBUG,"Server thread created");
 
         this.adapt = adapter;
         this.act = activity;
@@ -37,7 +35,7 @@ public class BluetoothServerThread extends Thread{
             serverSocket = adapt.listenUsingRfcommWithServiceRecord(SERVICE_NAME, SERVICE_UUID);
         } catch (IOException e) {
             e.printStackTrace();
-            Log.d(MainActivity.DEBUG,"Could not start host connection");
+            Log.d(ConversationActivity.DEBUG,"Could not start host connection");
 
             //failed to start server
         }
@@ -56,10 +54,10 @@ public class BluetoothServerThread extends Thread{
             }
 
             try {
-                Log.d(MainActivity.DEBUG,"Hosting Connection.. waiting for devices..");
+                Log.d(ConversationActivity.DEBUG,"Hosting Connection.. waiting for devices..");
                 socket = serverSocket.accept();
                 if (socket!=null){
-                    Log.d(MainActivity.DEBUG,"connection made to "+ socket.getRemoteDevice().getAddress());
+                    Log.d(ConversationActivity.DEBUG,"connection made to "+ socket.getRemoteDevice().getAddress());
 
                     final PairedDevice connectedDevice = new PairedDevice(act,socket);
                     act.getHandler().post(new Runnable() {
@@ -73,7 +71,7 @@ public class BluetoothServerThread extends Thread{
                 }
             } catch (IOException e){
                 cancel();
-                Log.d(MainActivity.DEBUG,"Error Hosting Connection");
+                Log.d(ConversationActivity.DEBUG,"Error Hosting Connection");
             }
 
 
@@ -87,7 +85,7 @@ public class BluetoothServerThread extends Thread{
         try {
             serverSocket.close();
         } catch (IOException e) {
-            Log.d(MainActivity.DEBUG,"Failed to cancel server thread");
+            Log.d(ConversationActivity.DEBUG,"Failed to cancel server thread");
 
         }
 

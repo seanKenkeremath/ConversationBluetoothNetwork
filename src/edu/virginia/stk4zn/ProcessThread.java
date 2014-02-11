@@ -18,33 +18,39 @@ import java.util.List;
 public class ProcessThread extends Thread {
 
 
-    private MainActivity act;
+    private ConversationActivity act;
     private boolean waiting;
 
     private AudioRecord recorder = null;
     private int bufferSize = 0;
     private byte audioData[] = null;
     private WaveHeader header;
-    private static final int RECORDER_BPP = 16;
-    private static final int RECORDER_SAMPLERATE = 44100; //8000;
-    private static final int RECORDER_CHANNELS = AudioFormat.CHANNEL_IN_MONO;
-    private static final int RECORDER_AUDIO_ENCODING = AudioFormat.ENCODING_PCM_16BIT;
-    private static final int CHANNELS = 1;
-    private static final float BUFFER_SECONDS = 5f;
-    private static final int BUFFER_SIZE = (int) (RECORDER_SAMPLERATE*BUFFER_SECONDS);
+    
+    
+    public static final int RECORDER_BPP = 16;
+    public static final int RECORDER_SAMPLERATE = 44100; //8000;
+    public static final int RECORDER_CHANNELS = AudioFormat.CHANNEL_IN_MONO;
+    public static final int RECORDER_AUDIO_ENCODING = AudioFormat.ENCODING_PCM_16BIT;
+    public static final int CHANNELS = 1;
+    public static final long BYTE_RATE = RECORDER_BPP * RECORDER_SAMPLERATE * CHANNELS/8;
 
-    private static final long BYTE_RATE = RECORDER_BPP * RECORDER_SAMPLERATE * CHANNELS/8;
+    public static final float WINDOW_SIZE = 1f; //seconds
+    public static final float FRAME_DURATION = 25f; //ms
+    public static final float FRAME_SHIFT = 10f; //ms
+
+    public static final float BUFFER_SECONDS = WINDOW_SIZE;
+    public static final int BUFFER_SIZE = (int) (RECORDER_SAMPLERATE*BUFFER_SECONDS);
 
     private long dt = 0;
 
     private String displayCoeffs;
 
-    public ProcessThread(MainActivity act) {
+    public ProcessThread(ConversationActivity act) {
         super("Analyze Audio Thread");
         this.act = act;
         //bufferSize = AudioRecord.getMinBufferSize(RECORDER_SAMPLERATE, RECORDER_CHANNELS, RECORDER_AUDIO_ENCODING);
         bufferSize = BUFFER_SIZE;
-        Log.d(MainActivity.DEBUG, "BufferSize " + bufferSize);
+        Log.d(ConversationActivity.DEBUG, "BufferSize " + bufferSize);
         audioData = new byte[bufferSize];
         header = new WaveHeader(getWaveFileHeader(bufferSize, bufferSize+36,
                 RECORDER_SAMPLERATE, CHANNELS, BYTE_RATE));
@@ -83,7 +89,7 @@ public class ProcessThread extends Thread {
 
 
     public void startRecording(){
-        Log.d(MainActivity.DEBUG,"Starting recording...");
+        Log.d(ConversationActivity.DEBUG,"Starting recording...");
         recorder.startRecording();
     }
 
@@ -94,7 +100,7 @@ public class ProcessThread extends Thread {
     }
 
 
-    private byte[] getWaveFileHeader(long totalAudioLen,
+    public static byte[] getWaveFileHeader(long totalAudioLen,
                                      long totalDataLen, long longSampleRate, int channels,
                                      long byteRate){
 
@@ -150,18 +156,18 @@ public class ProcessThread extends Thread {
 
     private void analyzeAudio(){
 
-        //Log.d(MainActivity.DEBUG,"Analyzing..");
+        //Log.d(ConversationActivity.DEBUG,"Analyzing..");
         Wave storedWave = new Wave(header, audioData);
-        //Log.d(MainActivity.DEBUG, "Sample Wave Length: " + storedWave.length());
+        //Log.d(ConversationActivity.DEBUG, "Sample Wave Length: " + storedWave.length());
         double[] inputSignal = storedWave.getSampleAmplitudes();
         int Fs = storedWave.getWaveHeader().getSampleRate();
-        double Tw = 25; // analysis frame duration (ms)
-        double Ts = 10; // analysis frame shift (ms)
-        double Wl = 1; // window duration (second)
+        double Tw = FRAME_DURATION; // analysis frame duration (ms)
+        double Ts = FRAME_SHIFT; // analysis frame shift (ms)
+        double Wl = WINDOW_SIZE; // window duration (second)
         /*
-        Log.d(MainActivity.DEBUG,"Signal Length: " + inputSignal.length + " FS: " + Fs);
-        Log.d(MainActivity.DEBUG,"Byte Rate: " + storedWave.getWaveHeader().getByteRate());
-        Log.d(MainActivity.DEBUG,"Bits Per Sample: " + storedWave.getWaveHeader().getBitsPerSample());
+        Log.d(ConversationActivity.DEBUG,"Signal Length: " + inputSignal.length + " FS: " + Fs);
+        Log.d(ConversationActivity.DEBUG,"Byte Rate: " + storedWave.getWaveHeader().getByteRate());
+        Log.d(ConversationActivity.DEBUG,"Bits Per Sample: " + storedWave.getWaveHeader().getBitsPerSample());
         */
 
 
@@ -169,8 +175,8 @@ public class ProcessThread extends Thread {
                 Tw, Ts, Fs, Wl);
 
         /*
-		 Log.d(MainActivity.DEBUG,"12 MFCCs of each frame:");
-		 Log.d(MainActivity.DEBUG,mfccFeatures.toString()); //12 MFCC for each frame
+		 Log.d(ConversationActivity.DEBUG,"12 MFCCs of each frame:");
+		 Log.d(ConversationActivity.DEBUG,mfccFeatures.toString()); //12 MFCC for each frame
 		 */
 
 
@@ -181,7 +187,7 @@ public class ProcessThread extends Thread {
 		 */
 
         if (lst.size()==0){
-            Log.d(MainActivity.DEBUG,"Failed analyzing audio");
+            Log.d(ConversationActivity.DEBUG,"Failed analyzing audio");
             return;
         }
 
@@ -189,20 +195,20 @@ public class ProcessThread extends Thread {
         double[] coeffs = new double[39];
         displayCoeffs = "";
         for (int i = 0; i < 39; i++) {
-            double[] allWindows = new double[lst.size()-1];// do not count
+            double[] allWindows = new double[lst.size()];// do not count
             // first window
-            for (int j = 1; j < lst.size(); j++) {
+            for (int j = 0; j < lst.size(); j++) {
 
-                allWindows[j - 1] = lst.get(j).windowFeature[i][0];
+                allWindows[j] = lst.get(j).windowFeature[i][0];
 
-				//Log.d(MainActivity.DEBUG_TAG, "mean windowFeature " + i + ": "
+				//Log.d(ConversationActivity.DEBUG_TAG, "mean windowFeature " + i + ": "
 				//		+ lst.get(j).windowFeature[i][0]);
 
             }
             coeffs[i] = Statistics.mean(allWindows);
             displayCoeffs += "mean feature " + i + ": "
                     + coeffs[i] + "\n";
-            //Log.d(MainActivity.DEBUG, message);
+            //Log.d(ConversationActivity.DEBUG, message);
             //act.sendMessageToAll(message);
         }
 
@@ -223,7 +229,7 @@ public class ProcessThread extends Thread {
 
 
     public void cancel() {
-        Log.d(MainActivity.DEBUG, "Killing Process Thread");
+        Log.d(ConversationActivity.DEBUG, "Killing Process Thread");
         stopRecording();
         waiting = false;
     }

@@ -10,11 +10,11 @@ import android.util.Log;
 public class BTDiscoveryService extends Thread {
 
 
-    private MainActivity act;
+    private ConversationActivity act;
     final static int WAIT_TIME = 30000;
     private boolean waiting;
 
-    public BTDiscoveryService(MainActivity act){
+    public BTDiscoveryService(ConversationActivity act){
         super("Discovery Thread");
         this.act = act;
 
@@ -23,7 +23,7 @@ public class BTDiscoveryService extends Thread {
 
     @Override
     public void run(){
-        Log.d(MainActivity.DEBUG,"Starting Discovery Thread");
+        Log.d(ConversationActivity.DEBUG,"Starting Discovery Thread");
         waiting = true;
         while(waiting){
             if (!act.getBluetoothAdapter().isDiscovering()){
@@ -32,14 +32,14 @@ public class BTDiscoveryService extends Thread {
             try {
                 Thread.sleep(WAIT_TIME);
             } catch (InterruptedException e) {
-                Log.d(MainActivity.DEBUG, "Discovery thread interuptted");
+                Log.d(ConversationActivity.DEBUG, "Discovery thread interuptted");
             }
         }
 
     }
 
     public void cancel() {
-        Log.d(MainActivity.DEBUG, "Killing Discovery Thread");
+        Log.d(ConversationActivity.DEBUG, "Killing Discovery Thread");
         waiting = false;
     }
 }

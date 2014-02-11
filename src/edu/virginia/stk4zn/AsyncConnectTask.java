@@ -2,7 +2,6 @@ package edu.virginia.stk4zn;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
-import android.content.Intent;
 import android.os.AsyncTask;
 import android.util.Log;
 
@@ -14,9 +13,9 @@ import java.io.IOException;
 public class AsyncConnectTask extends AsyncTask<BluetoothDevice, Integer, Boolean> {
 
 
-    MainActivity act;
+    ConversationActivity act;
 
-    public AsyncConnectTask(MainActivity activity){
+    public AsyncConnectTask(ConversationActivity activity){
         this.act = activity;
     }
 
@@ -37,7 +36,7 @@ public class AsyncConnectTask extends AsyncTask<BluetoothDevice, Integer, Boolea
 
         BluetoothDevice device = devices[0];
 
-        Log.d(MainActivity.DEBUG,"Attempting connection to " + device.getAddress());
+        Log.d(ConversationActivity.DEBUG,"Attempting connection to " + device.getAddress());
 
 
         try {
@@ -49,11 +48,11 @@ public class AsyncConnectTask extends AsyncTask<BluetoothDevice, Integer, Boolea
                     try {
                         socket.connect();
                     } catch (IOException connectException) {
-                        Log.d(MainActivity.DEBUG, "Could not connect to: " + socket.getRemoteDevice().getAddress());
+                        Log.d(ConversationActivity.DEBUG, "Could not connect to: " + socket.getRemoteDevice().getAddress());
                         try {
                             socket.close();
                         } catch (IOException closeException) {
-                            Log.d(MainActivity.DEBUG, "Could not close socket: " + socket.getRemoteDevice().getAddress());
+                            Log.d(ConversationActivity.DEBUG, "Could not close socket: " + socket.getRemoteDevice().getAddress());
 
                         }
                         return false;
@@ -71,7 +70,7 @@ public class AsyncConnectTask extends AsyncTask<BluetoothDevice, Integer, Boolea
                 }
 
             } catch (IOException e) {
-                Log.d(MainActivity.DEBUG, "Failed Connection to " + device.getName() + ": " + device.getAddress());
+                Log.d(ConversationActivity.DEBUG, "Failed Connection to " + device.getName() + ": " + device.getAddress());
                 return false;
             }
 

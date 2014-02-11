@@ -14,11 +14,11 @@ public class PairedDevice {
     private BluetoothSocket socket;
     private BTInboundConnectionThread inThread;
     private BTOutboundConnectionThread outThread;
-    private MainActivity act;
+    private ConversationActivity act;
 
     final static String DISCONNECT = "DISCONNECT";
 
-    public PairedDevice(MainActivity act, BluetoothSocket socket){
+    public PairedDevice(ConversationActivity act, BluetoothSocket socket){
         this.act = act;
         this.socket = socket;
         this.device = socket.getRemoteDevice();

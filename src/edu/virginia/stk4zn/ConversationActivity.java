@@ -17,7 +17,7 @@ import android.widget.TextView;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-public class MainActivity extends Activity {
+public class ConversationActivity extends Activity {
     /**
      * Called when the activity is first created.
      */
@@ -102,7 +102,7 @@ public class MainActivity extends Activity {
 
                     if (device.getName().equals(BLUETOOTH_ADAPTER_NAME) && !contains){
                         Log.d(DEBUG,"New Device: " + device.getName() + ": "+device.getAddress());
-                        AsyncConnectTask task = new AsyncConnectTask(MainActivity.this);
+                        AsyncConnectTask task = new AsyncConnectTask(ConversationActivity.this);
                         task.execute(device);
                     }
 

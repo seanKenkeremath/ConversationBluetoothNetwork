@@ -1,7 +1,5 @@
 package edu.virginia.stk4zn;
 
-import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.os.Handler;
 import android.os.Looper;
@@ -9,8 +7,6 @@ import android.util.Log;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.LinkedList;
 
 
 /**
@@ -19,14 +15,14 @@ import java.util.LinkedList;
 public class BTInboundConnectionThread extends Thread{
 
     private BluetoothSocket socket;
-    private MainActivity act;
+    private ConversationActivity act;
     private boolean waiting;
     private PairedDevice device;
     private Handler uiHandler;
 
-    public BTInboundConnectionThread(MainActivity activity, PairedDevice device, BluetoothSocket socket){
+    public BTInboundConnectionThread(ConversationActivity activity, PairedDevice device, BluetoothSocket socket){
         super("Inbound Thread from " +device.getAddress());
-        Log.d(MainActivity.DEBUG,"Creating inbound connection thread to: " + socket.getRemoteDevice().getAddress());
+        Log.d(ConversationActivity.DEBUG,"Creating inbound connection thread to: " + socket.getRemoteDevice().getAddress());
         this.device = device;
         this.act = activity;
         this.socket = socket;
@@ -37,7 +33,7 @@ public class BTInboundConnectionThread extends Thread{
     @Override
     public void run(){
 
-        Log.d(MainActivity.DEBUG, "Listening to device " +
+        Log.d(ConversationActivity.DEBUG, "Listening to device " +
                 socket.getRemoteDevice().getAddress());
 
         int bufferSize = 1024;
@@ -62,7 +58,7 @@ public class BTInboundConnectionThread extends Thread{
                     message = message + new String(buffer, 0, bytesRead - 1);
                 }
 
-                Log.d(MainActivity.DEBUG, "Received message: " + message + " from device " +
+                Log.d(ConversationActivity.DEBUG, "Received message: " + message + " from device " +
                         socket.getRemoteDevice().getAddress());
 
                 final String passMessage = message;
@@ -77,7 +73,7 @@ public class BTInboundConnectionThread extends Thread{
 
             }
         } catch (IOException e) {
-            Log.d(MainActivity.DEBUG, "IO exception on receipt");
+            Log.d(ConversationActivity.DEBUG, "IO exception on receipt");
             device.disconnect();
 
         }
@@ -88,13 +84,13 @@ public class BTInboundConnectionThread extends Thread{
 
 
     public void cancel() {
-        Log.d(MainActivity.DEBUG, "Killing inbound thread: " + socket.getRemoteDevice().getAddress());
+        Log.d(ConversationActivity.DEBUG, "Killing inbound thread: " + socket.getRemoteDevice().getAddress());
 
         waiting = false;
         try {
             socket.getInputStream().close();
         } catch (IOException e) {
-            Log.d(MainActivity.DEBUG, "Failed to close Input Stream from: " + socket.getRemoteDevice().getAddress());
+            Log.d(ConversationActivity.DEBUG, "Failed to close Input Stream from: " + socket.getRemoteDevice().getAddress());
         }
 
     }
