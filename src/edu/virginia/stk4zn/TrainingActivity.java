@@ -3,6 +3,7 @@ package edu.virginia.stk4zn;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -17,15 +18,28 @@ public class TrainingActivity extends Activity {
     private Button stopTraining;
     private Button toConversation;
 
+    private Handler handler;
+
     @Override
     public void onCreate(Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
         setContentView(R.layout.training);
-
+        handler = new Handler();
 
         init();
     }
 
+    public void enableTraining(){
+        stopTraining.setEnabled(false);
+        startTraining.setEnabled(true);
+        toConversation.setEnabled(true);
+    }
+
+    public void disableTraining(boolean stopEnabled){
+        startTraining.setEnabled(false);
+        stopTraining.setEnabled(stopEnabled);
+        toConversation.setEnabled(false);
+    }
     private void init(){
 
         startTraining = (Button) findViewById(R.id.training_train);
@@ -37,9 +51,7 @@ public class TrainingActivity extends Activity {
 
             @Override
             public void onClick(View v) {
-                v.setEnabled(false);
-                stopTraining.setEnabled(true);
-                toConversation.setEnabled(false);
+                disableTraining(true);
                 startTraining();
             }
         });
@@ -48,9 +60,7 @@ public class TrainingActivity extends Activity {
 
             @Override
             public void onClick(View v) {
-                v.setEnabled(false);
-                startTraining.setEnabled(true);
-                toConversation.setEnabled(true);
+                enableTraining();
                 stopTraining();
             }
         });
@@ -71,14 +81,14 @@ public class TrainingActivity extends Activity {
         if (trainThread!=null){
             trainThread.cancel();
             try {
-                Log.d(ConversationActivity.DEBUG, "joining previous Positive Training Thread");
+                Log.d(Static.DEBUG, "joining previous Positive Training Thread");
                 trainThread.join();
             } catch (InterruptedException e) {
-                Log.d(ConversationActivity.DEBUG, "Interrupted joining Positive Training Thread");
+                Log.d(Static.DEBUG, "Interrupted joining Positive Training Thread");
 
             }
         }
-        trainThread = new PositiveTrainingThread();
+        trainThread = new PositiveTrainingThread(this);
         trainThread.start();
     }
 
@@ -92,8 +102,12 @@ public class TrainingActivity extends Activity {
     @Override
     protected void onDestroy(){
         super.onDestroy();
-        Log.d(ConversationActivity.DEBUG, "Training ON DESTROY");
+        Log.d(Static.DEBUG, "Training ON DESTROY");
         stopTraining();
+    }
+
+    public Handler getHandler(){
+        return handler;
     }
 
 }

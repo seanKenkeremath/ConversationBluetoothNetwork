@@ -11,7 +11,6 @@ public class BTDiscoveryService extends Thread {
 
 
     private ConversationActivity act;
-    final static int WAIT_TIME = 30000;
     private boolean waiting;
 
     public BTDiscoveryService(ConversationActivity act){
@@ -23,23 +22,23 @@ public class BTDiscoveryService extends Thread {
 
     @Override
     public void run(){
-        Log.d(ConversationActivity.DEBUG,"Starting Discovery Thread");
+        Log.d(Static.DEBUG,"Starting Discovery Thread");
         waiting = true;
         while(waiting){
             if (!act.getBluetoothAdapter().isDiscovering()){
                 act.startDiscovery();
             }
             try {
-                Thread.sleep(WAIT_TIME);
+                Thread.sleep(Static.BLUETOOTH_DISCOVERY_WAIT_TIME);
             } catch (InterruptedException e) {
-                Log.d(ConversationActivity.DEBUG, "Discovery thread interuptted");
+                Log.d(Static.DEBUG, "Discovery thread interuptted");
             }
         }
 
     }
 
     public void cancel() {
-        Log.d(ConversationActivity.DEBUG, "Killing Discovery Thread");
+        Log.d(Static.DEBUG, "Killing Discovery Thread");
         waiting = false;
     }
 }

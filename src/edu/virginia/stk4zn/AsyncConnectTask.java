@@ -16,6 +16,7 @@ public class AsyncConnectTask extends AsyncTask<BluetoothDevice, Integer, Boolea
     ConversationActivity act;
 
     public AsyncConnectTask(ConversationActivity activity){
+        super();
         this.act = activity;
     }
 
@@ -36,11 +37,11 @@ public class AsyncConnectTask extends AsyncTask<BluetoothDevice, Integer, Boolea
 
         BluetoothDevice device = devices[0];
 
-        Log.d(ConversationActivity.DEBUG,"Attempting connection to " + device.getAddress());
+        Log.d(Static.DEBUG,"Attempting connection to " + device.getAddress());
 
 
         try {
-                BluetoothSocket socket = device.createRfcommSocketToServiceRecord(BluetoothServerThread.SERVICE_UUID);
+                BluetoothSocket socket = device.createRfcommSocketToServiceRecord(Static.BLUETOOTH_SERVICE_UUID);
 
                 if (socket!=null){
 
@@ -48,11 +49,11 @@ public class AsyncConnectTask extends AsyncTask<BluetoothDevice, Integer, Boolea
                     try {
                         socket.connect();
                     } catch (IOException connectException) {
-                        Log.d(ConversationActivity.DEBUG, "Could not connect to: " + socket.getRemoteDevice().getAddress());
+                        Log.d(Static.DEBUG, "Could not connect to: " + socket.getRemoteDevice().getAddress());
                         try {
                             socket.close();
                         } catch (IOException closeException) {
-                            Log.d(ConversationActivity.DEBUG, "Could not close socket: " + socket.getRemoteDevice().getAddress());
+                            Log.d(Static.DEBUG, "Could not close socket: " + socket.getRemoteDevice().getAddress());
 
                         }
                         return false;
@@ -70,7 +71,7 @@ public class AsyncConnectTask extends AsyncTask<BluetoothDevice, Integer, Boolea
                 }
 
             } catch (IOException e) {
-                Log.d(ConversationActivity.DEBUG, "Failed Connection to " + device.getName() + ": " + device.getAddress());
+                Log.d(Static.DEBUG, "Failed Connection to " + device.getName() + ": " + device.getAddress());
                 return false;
             }
 

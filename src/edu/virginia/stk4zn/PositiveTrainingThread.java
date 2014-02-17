@@ -19,10 +19,9 @@ import java.util.List;
 public class PositiveTrainingThread extends Thread {
 
 
-    private static final String AUDIO_RECORDER_FOLDER = "SocInt";
-    public static final String TRAINING_FILENAME = "training";
 
 
+    private TrainingActivity act;
     ArrayList<WindowFeature> samples;
 
 
@@ -34,17 +33,18 @@ public class PositiveTrainingThread extends Thread {
     private WaveHeader header;
 
 
-    public PositiveTrainingThread(){
+    public PositiveTrainingThread(TrainingActivity activity){
         super("Positive Training Thread");
+        this.act = activity;
         samples = new ArrayList<WindowFeature>();
 
-        bufferSize = ProcessThread.BUFFER_SIZE;
-        Log.d(ConversationActivity.DEBUG, "BufferSize " + bufferSize);
+        bufferSize = Static.AUDIO_BUFFER_SIZE;
+        Log.d(Static.DEBUG, "BufferSize " + bufferSize);
         audioData = new byte[bufferSize];
         header = new WaveHeader(ProcessThread.getWaveFileHeader(bufferSize, bufferSize + 36,
-                ProcessThread.RECORDER_SAMPLERATE, ProcessThread.CHANNELS, ProcessThread.BYTE_RATE));
+                Static.AUDIO_RECORDER_SAMPLERATE, Static.AUDIO_CHANNELS, Static.AUDIO_BYTE_RATE));
         recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
-                ProcessThread.RECORDER_SAMPLERATE, ProcessThread.RECORDER_CHANNELS, ProcessThread.RECORDER_AUDIO_ENCODING,
+                Static.AUDIO_RECORDER_SAMPLERATE, Static.AUDIO_RECORDER_CHANNELS, Static.AUDIO_RECORDER_AUDIO_ENCODING,
                 bufferSize);
     }
 
@@ -81,7 +81,7 @@ public class PositiveTrainingThread extends Thread {
     }
 
     public void startRecording(){
-        Log.d(ConversationActivity.DEBUG,"Starting recording...");
+        Log.d(Static.DEBUG,"Starting recording...");
         recorder.startRecording();
     }
 
@@ -93,7 +93,7 @@ public class PositiveTrainingThread extends Thread {
     }
 
     public void cancel() {
-        Log.d(ConversationActivity.DEBUG, "Killing Positive Training Thread");
+        Log.d(Static.DEBUG, "Killing Positive Training Thread");
         stopRecording();
         waiting = false;
     }
@@ -105,9 +105,9 @@ public class PositiveTrainingThread extends Thread {
 
         double[] inputSignal = storedWave.getSampleAmplitudes();
         int Fs = storedWave.getWaveHeader().getSampleRate();
-        double Tw = ProcessThread.FRAME_DURATION; // analysis frame duration (ms)
-        double Ts = ProcessThread.FRAME_SHIFT; // analysis frame shift (ms)
-        double Wl = ProcessThread.WINDOW_SIZE; // window duration (second)
+        double Tw = Static.AUDIO_FRAME_DURATION; // analysis frame duration (ms)
+        double Ts = Static.AUDIO_FRAME_SHIFT; // analysis frame shift (ms)
+        double Wl = Static.AUDIO_WINDOW_SIZE; // window duration (second)
 
 
 
@@ -118,12 +118,12 @@ public class PositiveTrainingThread extends Thread {
         List<WindowFeature> lst = mfccFeatures.getListOfWindowFeature();
 
         if (lst.size()==0){
-            Log.d(ConversationActivity.DEBUG,"Failed analyzing audio");
+            Log.d(Static.DEBUG,"Failed analyzing audio");
             return;
         }
 
         // if not noise ...
-        
+
         samples.addAll(lst);
 
         //
@@ -134,17 +134,17 @@ public class PositiveTrainingThread extends Thread {
 
     private String getFilename(){
         String filepath = Environment.getExternalStorageDirectory().getPath();
-        File file = new File(filepath,AUDIO_RECORDER_FOLDER);
+        File file = new File(filepath,Static.TRAINING_FOLDER);
 
         if(!file.exists()){
             file.mkdirs();
         }
-        return (file.getAbsolutePath() + "/" + TRAINING_FILENAME+".txt");
+        return (file.getAbsolutePath() + "/" + Static.TRAINING_FILENAME+Static.TRAINING_FILE_EXTENSION);
     }
 
     private void writeDataToFile(){
         try {
-            Log.d(ConversationActivity.DEBUG,"Writing " + samples.size() + " positive training samples to file");
+            Log.d(Static.DEBUG,"Writing " + samples.size() + " positive training samples to file");
 
             File file = new File(getFilename());
 
@@ -168,8 +168,19 @@ public class PositiveTrainingThread extends Thread {
 
             fp.flush();
             fp.close();
+
+
+            act.getHandler().post(new Runnable(){
+                @Override
+                public void run() {
+                    CreateModelTask task = new CreateModelTask(act);
+                    task.execute(getFilename());
+                }
+
+            });
+
         } catch (IOException e) {
-            Log.d(ConversationActivity.DEBUG, "Failed writing to training file");
+            Log.d(Static.DEBUG, "Failed writing to training file");
         }
 
     }

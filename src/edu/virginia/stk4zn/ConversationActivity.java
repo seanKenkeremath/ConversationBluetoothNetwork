@@ -22,9 +22,8 @@ public class ConversationActivity extends Activity {
      * Called when the activity is first created.
      */
 
-    final static int REQUEST_ENABLE_BT = 333;
-    final static String BLUETOOTH_ADAPTER_NAME = "SOCINT";
-    final static String DEBUG = "SOCDEB";
+    private final static int REQUEST_ENABLE_BT = 333;
+
 
     Button statusButton;
 
@@ -63,8 +62,8 @@ public class ConversationActivity extends Activity {
                 for (Thread thread: Thread.getAllStackTraces().keySet()){
                     allThreads+=thread.getName() +"\n";
                 }
-                Log.d(DEBUG, allThreads);
-                Log.d(DEBUG, pairedDevices.size() + " devices, Threads: " + Thread.activeCount());
+                Log.d(Static.DEBUG, allThreads);
+                Log.d(Static.DEBUG, pairedDevices.size() + " devices, Threads: " + Thread.activeCount());
             }
         });
 
@@ -90,7 +89,7 @@ public class ConversationActivity extends Activity {
             public void onReceive(Context context, Intent intent) {
                 if (intent.getAction().equals(BluetoothDevice.ACTION_FOUND)){
                     BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                    Log.d(DEBUG,"Discovered Device: " + device.getName() + ": "+device.getAddress());
+                    Log.d(Static.DEBUG,"Discovered Device: " + device.getName() + ": "+device.getAddress());
 
                     boolean contains = false;
 
@@ -100,8 +99,8 @@ public class ConversationActivity extends Activity {
                         }
                     }
 
-                    if (device.getName().equals(BLUETOOTH_ADAPTER_NAME) && !contains){
-                        Log.d(DEBUG,"New Device: " + device.getName() + ": "+device.getAddress());
+                    if (device.getName().equals(Static.BLUETOOTH_ADAPTER_NAME) && !contains){
+                        Log.d(Static.DEBUG,"New Device: " + device.getName() + ": "+device.getAddress());
                         AsyncConnectTask task = new AsyncConnectTask(ConversationActivity.this);
                         task.execute(device);
                     }
@@ -147,12 +146,12 @@ public class ConversationActivity extends Activity {
             cancelDiscovery();
         }
 
-            Log.d(DEBUG,"Starting Discovery..");
+            Log.d(Static.DEBUG,"Starting Discovery..");
             adapt.startDiscovery();
 
     }
     public void cancelDiscovery(){
-        Log.d(DEBUG,"Canceling Discovery..");
+        Log.d(Static.DEBUG,"Canceling Discovery..");
         adapt.cancelDiscovery();
     }
 
@@ -196,14 +195,14 @@ public class ConversationActivity extends Activity {
 
 
     public void hostConnection(){
-        adapt.setName(BLUETOOTH_ADAPTER_NAME);
+        adapt.setName(Static.BLUETOOTH_ADAPTER_NAME);
         if (serverThread!=null){
             serverThread.cancel();
             try {
-                Log.d(DEBUG,"joining previous serverThread");
+                Log.d(Static.DEBUG,"joining previous serverThread");
                 serverThread.join();
             } catch (InterruptedException e) {
-                Log.d(DEBUG, "Interrupted joining serverThread");
+                Log.d(Static.DEBUG, "Interrupted joining serverThread");
             }
         }
         serverThread = new BluetoothServerThread(this, adapt);
@@ -214,10 +213,10 @@ public class ConversationActivity extends Activity {
         if (processThread!=null){
             processThread.cancel();
             try {
-                Log.d(DEBUG,"joining previous processThread");
+                Log.d(Static.DEBUG,"joining previous processThread");
                 processThread.join();
             } catch (InterruptedException e) {
-                Log.d(DEBUG, "Interrupted joining processThread");
+                Log.d(Static.DEBUG, "Interrupted joining processThread");
 
             }
         }
@@ -229,10 +228,10 @@ public class ConversationActivity extends Activity {
         if (discoveryThread!=null){
             discoveryThread.cancel();
             try {
-                Log.d(DEBUG,"joining previous discoveryThread");
+                Log.d(Static.DEBUG,"joining previous discoveryThread");
                 discoveryThread.join();
             } catch (InterruptedException e) {
-                Log.d(DEBUG,"Interrupted joining discoveryThread");
+                Log.d(Static.DEBUG,"Interrupted joining discoveryThread");
             }
         }
         discoveryThread = new BTDiscoveryService(this);
@@ -247,7 +246,7 @@ public class ConversationActivity extends Activity {
 
 
     private void makeDiscoverable(int duration){
-        Log.d(DEBUG, "Setting Discoverable..");
+        Log.d(Static.DEBUG, "Setting Discoverable..");
         Intent makeDiscoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
         makeDiscoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, duration);
         startActivity(makeDiscoverableIntent);
@@ -269,13 +268,13 @@ public class ConversationActivity extends Activity {
     @Override
     protected void onDestroy(){
         super.onDestroy();
-        Log.d(DEBUG, "ON DESTROY");
+        Log.d(Static.DEBUG, "ON DESTROY");
         this.unregisterReceiver(discoveryReceiver);
         discoveryThread.cancel();
         processThread.cancel();
         serverThread.cancel();
         adapt.cancelDiscovery();
-        adapt.setName("NOT" + BLUETOOTH_ADAPTER_NAME);
+        adapt.setName("NOT" + Static.BLUETOOTH_ADAPTER_NAME);
         for (PairedDevice device: pairedDevices){
             device.disconnect();
         }
@@ -286,12 +285,12 @@ public class ConversationActivity extends Activity {
     protected void onActivityResult(int requestCode, int resultCode, Intent intent){
             if (requestCode == REQUEST_ENABLE_BT){
                 if (resultCode == RESULT_OK) {
-                    Log.d(DEBUG, "Successfully enabled bluetooth");
+                    Log.d(Static.DEBUG, "Successfully enabled bluetooth");
                     makeDiscoverable(0);
                     startDiscoveryThread();
                     hostConnection();
                 } else{
-                    Log.d(DEBUG,"Failed to enable bluetooth");
+                    Log.d(Static.DEBUG,"Failed to enable bluetooth");
                 }
             }
     }

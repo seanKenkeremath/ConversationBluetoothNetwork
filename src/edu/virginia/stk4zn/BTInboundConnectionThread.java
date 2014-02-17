@@ -22,7 +22,7 @@ public class BTInboundConnectionThread extends Thread{
 
     public BTInboundConnectionThread(ConversationActivity activity, PairedDevice device, BluetoothSocket socket){
         super("Inbound Thread from " +device.getAddress());
-        Log.d(ConversationActivity.DEBUG,"Creating inbound connection thread to: " + socket.getRemoteDevice().getAddress());
+        Log.d(Static.DEBUG,"Creating inbound connection thread to: " + socket.getRemoteDevice().getAddress());
         this.device = device;
         this.act = activity;
         this.socket = socket;
@@ -33,7 +33,7 @@ public class BTInboundConnectionThread extends Thread{
     @Override
     public void run(){
 
-        Log.d(ConversationActivity.DEBUG, "Listening to device " +
+        Log.d(Static.DEBUG, "Listening to device " +
                 socket.getRemoteDevice().getAddress());
 
         int bufferSize = 1024;
@@ -58,7 +58,7 @@ public class BTInboundConnectionThread extends Thread{
                     message = message + new String(buffer, 0, bytesRead - 1);
                 }
 
-                Log.d(ConversationActivity.DEBUG, "Received message: " + message + " from device " +
+                Log.d(Static.DEBUG, "Received message: " + message + " from device " +
                         socket.getRemoteDevice().getAddress());
 
                 final String passMessage = message;
@@ -73,7 +73,7 @@ public class BTInboundConnectionThread extends Thread{
 
             }
         } catch (IOException e) {
-            Log.d(ConversationActivity.DEBUG, "IO exception on receipt");
+            Log.d(Static.DEBUG, "IO exception on receipt");
             device.disconnect();
 
         }
@@ -84,13 +84,13 @@ public class BTInboundConnectionThread extends Thread{
 
 
     public void cancel() {
-        Log.d(ConversationActivity.DEBUG, "Killing inbound thread: " + socket.getRemoteDevice().getAddress());
+        Log.d(Static.DEBUG, "Killing inbound thread: " + socket.getRemoteDevice().getAddress());
 
         waiting = false;
         try {
             socket.getInputStream().close();
         } catch (IOException e) {
-            Log.d(ConversationActivity.DEBUG, "Failed to close Input Stream from: " + socket.getRemoteDevice().getAddress());
+            Log.d(Static.DEBUG, "Failed to close Input Stream from: " + socket.getRemoteDevice().getAddress());
         }
 
     }

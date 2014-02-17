@@ -27,19 +27,7 @@ public class ProcessThread extends Thread {
     private WaveHeader header;
     
     
-    public static final int RECORDER_BPP = 16;
-    public static final int RECORDER_SAMPLERATE = 44100; //8000;
-    public static final int RECORDER_CHANNELS = AudioFormat.CHANNEL_IN_MONO;
-    public static final int RECORDER_AUDIO_ENCODING = AudioFormat.ENCODING_PCM_16BIT;
-    public static final int CHANNELS = 1;
-    public static final long BYTE_RATE = RECORDER_BPP * RECORDER_SAMPLERATE * CHANNELS/8;
 
-    public static final float WINDOW_SIZE = 1f; //seconds
-    public static final float FRAME_DURATION = 25f; //ms
-    public static final float FRAME_SHIFT = 10f; //ms
-
-    public static final float BUFFER_SECONDS = WINDOW_SIZE;
-    public static final int BUFFER_SIZE = (int) (RECORDER_SAMPLERATE*BUFFER_SECONDS);
 
     private long dt = 0;
 
@@ -49,13 +37,14 @@ public class ProcessThread extends Thread {
         super("Analyze Audio Thread");
         this.act = act;
         //bufferSize = AudioRecord.getMinBufferSize(RECORDER_SAMPLERATE, RECORDER_CHANNELS, RECORDER_AUDIO_ENCODING);
-        bufferSize = BUFFER_SIZE;
-        Log.d(ConversationActivity.DEBUG, "BufferSize " + bufferSize);
+        bufferSize = Static.AUDIO_BUFFER_SIZE;
+        Log.d(Static.DEBUG, "BufferSize " + bufferSize);
         audioData = new byte[bufferSize];
         header = new WaveHeader(getWaveFileHeader(bufferSize, bufferSize+36,
-                RECORDER_SAMPLERATE, CHANNELS, BYTE_RATE));
+                Static.AUDIO_RECORDER_SAMPLERATE, Static.AUDIO_CHANNELS, Static.AUDIO_BYTE_RATE));
         recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
-                RECORDER_SAMPLERATE, RECORDER_CHANNELS, RECORDER_AUDIO_ENCODING, bufferSize);
+                Static.AUDIO_RECORDER_SAMPLERATE, Static.AUDIO_RECORDER_CHANNELS, Static.AUDIO_RECORDER_AUDIO_ENCODING,
+                bufferSize);
     }
 
     @Override
@@ -89,7 +78,7 @@ public class ProcessThread extends Thread {
 
 
     public void startRecording(){
-        Log.d(ConversationActivity.DEBUG,"Starting recording...");
+        Log.d(Static.DEBUG,"Starting recording...");
         recorder.startRecording();
     }
 
@@ -138,9 +127,9 @@ public class ProcessThread extends Thread {
         header[29] = (byte) ((byteRate >> 8) & 0xff);
         header[30] = (byte) ((byteRate >> 16) & 0xff);
         header[31] = (byte) ((byteRate >> 24) & 0xff);
-        header[32] = (byte) (channels * RECORDER_BPP / 8);  // block align
+        header[32] = (byte) (channels * Static.AUDIO_RECORDER_BPP / 8);  // block align
         header[33] = 0;
-        header[34] = RECORDER_BPP;  // bits per sample
+        header[34] = Static.AUDIO_RECORDER_BPP;  // bits per sample
         header[35] = 0;
         header[36] = 'd';
         header[37] = 'a';
@@ -161,9 +150,9 @@ public class ProcessThread extends Thread {
         //Log.d(ConversationActivity.DEBUG, "Sample Wave Length: " + storedWave.length());
         double[] inputSignal = storedWave.getSampleAmplitudes();
         int Fs = storedWave.getWaveHeader().getSampleRate();
-        double Tw = FRAME_DURATION; // analysis frame duration (ms)
-        double Ts = FRAME_SHIFT; // analysis frame shift (ms)
-        double Wl = WINDOW_SIZE; // window duration (second)
+        double Tw = Static.AUDIO_FRAME_DURATION; // analysis frame duration (ms)
+        double Ts = Static.AUDIO_FRAME_SHIFT; // analysis frame shift (ms)
+        double Wl = Static.AUDIO_WINDOW_SIZE; // window duration (second)
         /*
         Log.d(ConversationActivity.DEBUG,"Signal Length: " + inputSignal.length + " FS: " + Fs);
         Log.d(ConversationActivity.DEBUG,"Byte Rate: " + storedWave.getWaveHeader().getByteRate());
@@ -187,7 +176,7 @@ public class ProcessThread extends Thread {
 		 */
 
         if (lst.size()==0){
-            Log.d(ConversationActivity.DEBUG,"Failed analyzing audio");
+            Log.d(Static.DEBUG,"Failed analyzing audio");
             return;
         }
 
@@ -229,7 +218,7 @@ public class ProcessThread extends Thread {
 
 
     public void cancel() {
-        Log.d(ConversationActivity.DEBUG, "Killing Process Thread");
+        Log.d(Static.DEBUG, "Killing Process Thread");
         stopRecording();
         waiting = false;
     }

@@ -16,8 +16,6 @@ public class PairedDevice {
     private BTOutboundConnectionThread outThread;
     private ConversationActivity act;
 
-    final static String DISCONNECT = "DISCONNECT";
-
     public PairedDevice(ConversationActivity act, BluetoothSocket socket){
         this.act = act;
         this.socket = socket;
