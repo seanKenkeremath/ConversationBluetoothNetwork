@@ -2,6 +2,8 @@ package svm;
 import java.io.*;
 import java.util.*;
 
+import android.util.Log;
+import edu.virginia.stk4zn.Static;
 import svm.libsvm.svm;
 import svm.libsvm.svm_model;
 import svm.libsvm.svm_node;
@@ -9,7 +11,7 @@ import svm.libsvm.svm_parameter;
 import svm.libsvm.svm_print_interface;
 import svm.libsvm.svm_problem;
 
-class svm_train {
+public class svm_train {
 	private svm_parameter param;		// set by parse_command_line
 	private svm_problem prob;		// set by read_problem
 	private svm_model model;
@@ -96,8 +98,9 @@ class svm_train {
 		}
 	}
 	
-	private void run(String argv[]) throws IOException
+	public void run(String argv[]) throws IOException
 	{
+        Log.d(Static.DEBUG, "Running svm_train to create model file");
 		parse_command_line(argv);
 		read_problem();
 		error_msg = svm.svm_check_parameter(prob,param);

@@ -132,21 +132,13 @@ public class PositiveTrainingThread extends Thread {
     }
 
 
-    private String getFilename(){
-        String filepath = Environment.getExternalStorageDirectory().getPath();
-        File file = new File(filepath,Static.TRAINING_FOLDER);
 
-        if(!file.exists()){
-            file.mkdirs();
-        }
-        return (file.getAbsolutePath() + "/" + Static.TRAINING_FILENAME+Static.TRAINING_FILE_EXTENSION);
-    }
 
     private void writeDataToFile(){
         try {
             Log.d(Static.DEBUG,"Writing " + samples.size() + " positive training samples to file");
 
-            File file = new File(getFilename());
+            File file = new File(Static.getTrainingFilepath());
 
             if (!file.exists()){
                 file.createNewFile();
@@ -154,6 +146,10 @@ public class PositiveTrainingThread extends Thread {
 
             FileWriter fp = new FileWriter(file, false);
             for(WindowFeature wf: samples){
+
+                if (wf.windowFeature[0][0] == Double.NEGATIVE_INFINITY || wf.windowFeature[0][0] == Double.POSITIVE_INFINITY){
+                    continue;
+                }
                 fp.write("+1" + " ");
 
                 int featureIndex = 1;	//start at 1
@@ -174,7 +170,7 @@ public class PositiveTrainingThread extends Thread {
                 @Override
                 public void run() {
                     CreateModelTask task = new CreateModelTask(act);
-                    task.execute(getFilename());
+                    task.execute(Static.getTrainingFilepath());
                 }
 
             });

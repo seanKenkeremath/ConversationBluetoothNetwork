@@ -2,6 +2,8 @@ package edu.virginia.stk4zn;
 
 import android.os.AsyncTask;
 import android.util.Log;
+import svm.svm_scale;
+import svm.svm_train;
 
 import java.io.*;
 
@@ -31,9 +33,9 @@ public class CreateModelTask extends AsyncTask<String, Integer, Boolean> {
 
     @Override
     protected Boolean doInBackground(String... params) {
-        String positiveTrainingFilepath = params[0];
+        String trainingFilepath = params[0];
 
-        File posFile = new File(positiveTrainingFilepath);
+        File posFile = new File(trainingFilepath);
 
         try {
             FileWriter writer = new FileWriter(posFile, true);
@@ -44,8 +46,27 @@ public class CreateModelTask extends AsyncTask<String, Integer, Boolean> {
             }
             negIn.close();
             writer.close();
+
         } catch (IOException e) {
-            Log.d(Static.DEBUG, "Failed opening posFile");
+            Log.d(Static.DEBUG, "Failed creating training file");
+        }
+
+
+        try {
+            svm_scale scaler = new svm_scale();
+            String[] args = {Static.getTrainingFilepath()};
+            scaler.run(args);
+        } catch (IOException e) {
+            Log.d(Static.DEBUG,"Failed scaling training file");
+        }
+
+
+        try {
+            svm_train trainer = new svm_train();
+            String[] args = {Static.getScaledTrainingFilepath(), Static.getModelFilepath()};
+            trainer.run(args);
+        } catch (IOException e) {
+            Log.d(Static.DEBUG, "Failed creating model file");
         }
 
 

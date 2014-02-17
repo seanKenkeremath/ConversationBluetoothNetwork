@@ -1,9 +1,12 @@
 package svm;
+import android.util.Log;
+import edu.virginia.stk4zn.Static;
+
 import java.io.*;
 import java.util.*;
 import java.text.DecimalFormat;
 
-class svm_scale
+public class svm_scale
 {
 	private String line = null;
 	private double lower = -1.0;
@@ -22,7 +25,8 @@ class svm_scale
 	private DataOutputStream outputStream;
     
    
-    
+    public svm_scale(){
+    }
 
 	private static void exit_with_help()
 	{
@@ -89,8 +93,9 @@ class svm_scale
 		return line;
 	}
 
-	void run(String []argv) throws IOException
+	public void run(String []argv) throws IOException
 	{
+        Log.d(Static.DEBUG,"running svm_scale");
 		int i,index;
 		BufferedReader fp = null, fp_restore = null;
 		String save_filename = null;
@@ -116,30 +121,31 @@ class svm_scale
 				case 's': save_filename = argv[i];	break;
 				case 'r': restore_filename = argv[i];	break;
 				default:
-					  System.err.println("unknown option");
+					  Log.d(Static.DEBUG,"unknown option");
 					  exit_with_help();
 			}
 		}
 
 		if(!(upper > lower) || (y_scaling && !(y_upper > y_lower)))
 		{
-			System.err.println("inconsistent lower/upper specification");
+			Log.d(Static.DEBUG,"inconsistent lower/upper specification");
 			System.exit(1);
 		}
 		if(restore_filename != null && save_filename != null)
 		{
-			System.err.println("cannot use -r and -s simultaneously");
+			Log.d(Static.DEBUG,"cannot use -r and -s simultaneously");
 			System.exit(1);
 		}
 
-		if(argv.length != i+1)
+		if(argv.length != i+1){
+            Log.d(Static.DEBUG,"improper syntax");
 			exit_with_help();
-
+        }
 		data_filename = argv[i];
 		try {
-			fp = new BufferedReader(new FileReader(data_filename));
+            fp = new BufferedReader(new FileReader(data_filename));
 		} catch (Exception e) {
-			System.err.println("can't open file " + data_filename);
+			Log.d(Static.DEBUG, "can't open file " + data_filename);
 			System.exit(1);
 		}
 
@@ -149,13 +155,13 @@ class svm_scale
 
 		if(restore_filename != null)
 		{
-			int idx, c;
+            int idx, c;
 
 			try {
 				fp_restore = new BufferedReader(new FileReader(restore_filename));
 			}
 			catch (Exception e) {
-				System.err.println("can't open file " + restore_filename);
+				Log.d(Static.DEBUG,"can't open file " + restore_filename);
 				System.exit(1);
 			}
 			if((c = fp_restore.read()) == 'y')
@@ -194,17 +200,19 @@ class svm_scale
 			feature_max = new double[(max_index+1)];
 			feature_min = new double[(max_index+1)];
 		} catch(OutOfMemoryError e) {
-			System.err.println("can't allocate enough memory");
+			Log.d(Static.DEBUG,"can't allocate enough memory");
 			System.exit(1);
 		}
 
-		for(i=0;i<=max_index;i++)
+
+        for(i=0;i<=max_index;i++)
 		{
 			feature_max[i] = -Double.MAX_VALUE;
 			feature_min[i] = Double.MAX_VALUE;
 		}
 
-		fp = rewind(fp, data_filename);
+
+        fp = rewind(fp, data_filename);
 
 		/* pass 2: find out min/max value */
 		while(readline(fp) != null)
@@ -241,7 +249,8 @@ class svm_scale
 			}
 		}
 
-		fp = rewind(fp, data_filename);
+
+        fp = rewind(fp, data_filename);
 
 		/* pass 2.5: save/restore feature_min/feature_max */
 		if(restore_filename != null)
@@ -286,7 +295,9 @@ class svm_scale
 			}
 			fp_restore.close();
 		}
-		outputStream = new DataOutputStream(new BufferedOutputStream(new FileOutputStream("scaled_"+data_filename)));
+
+        outputStream = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(Static.getScaledTrainingFilepath())));
+
 		if(save_filename != null)
 		{
 			Formatter formatter = new Formatter(new StringBuilder());
@@ -295,7 +306,7 @@ class svm_scale
 			try {
 				fp_save = new BufferedWriter(new FileWriter(save_filename));
 			} catch(IOException e) {
-				System.err.println("can't open file " + save_filename);
+				Log.d(Static.DEBUG,"can't open file " + save_filename);
 				System.exit(1);
 			}
 
@@ -346,7 +357,7 @@ class svm_scale
 			outputStream.writeBytes("\n");
 		}
 		if (new_num_nonzeros > num_nonzeros)
-			System.err.print(
+			Log.d(Static.DEBUG,
 			 "WARNING: original #nonzeros " + num_nonzeros+"\n"
 			+"         new      #nonzeros " + new_num_nonzeros+"\n"
 			+"Use -l 0 if many original feature values are zeros\n");

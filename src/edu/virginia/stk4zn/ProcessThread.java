@@ -181,6 +181,7 @@ public class ProcessThread extends Thread {
         }
 
 
+        /*
         double[] coeffs = new double[39];
         displayCoeffs = "";
         for (int i = 0; i < 39; i++) {
@@ -209,6 +210,7 @@ public class ProcessThread extends Thread {
                 act.displayMFCC(displayCoeffs);
             }
         });
+        */
 
 
 
