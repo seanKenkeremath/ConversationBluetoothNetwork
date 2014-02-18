@@ -7,15 +7,19 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.List;
 import java.util.StringTokenizer;
 
+import android.util.Log;
+import audio.feature.WindowFeature;
+import edu.virginia.stk4zn.Static;
 import svm.libsvm.svm;
 import svm.libsvm.svm_model;
 import svm.libsvm.svm_node;
 import svm.libsvm.svm_parameter;
 import svm.libsvm.svm_print_interface;
 
-class svm_predict {
+public class svm_predict {
 	private static svm_print_interface svm_print_null = new svm_print_interface()
 	{
 		public void print(String s) {}
@@ -45,6 +49,87 @@ class svm_predict {
 	{
 		return Integer.parseInt(s);
 	}
+
+    public static String predictRealtime(List<WindowFeature> features, svm_model model, int predict_probability){
+        int correct = 0;
+        int total = 0;
+        double error = 0;
+        double sumv = 0, sumy = 0, sumvv = 0, sumyy = 0, sumvy = 0;
+
+        int svm_type=svm.svm_get_svm_type(model);
+        int nr_class=svm.svm_get_nr_class(model);
+        double[] prob_estimates=null;
+
+        if(predict_probability == 1)
+        {
+            if(svm_type == svm_parameter.EPSILON_SVR ||
+                    svm_type == svm_parameter.NU_SVR)
+            {
+                svm_predict.info("Prob. model for test data: target value = predicted value + z,\nz: Laplace distribution e^(-|z|/sigma)/(2sigma),sigma="+svm.svm_get_svr_probability(model)+"\n");
+            }
+            else
+            {
+                int[] labels=new int[nr_class];
+                svm.svm_get_labels(model,labels);
+                prob_estimates = new double[nr_class];
+            }
+        }
+
+
+        for (int i = 0; i < features.size(); i++){
+            WindowFeature feature = features.get(i);
+
+            int mfccCoeffs = feature.windowFeature.length * feature.windowFeature[0].length; //will crash if empty
+            svm_node[] x = new svm_node[mfccCoeffs];
+
+            int labelNum = 1;
+            for (int j = 0; j < feature.windowFeature.length;j++){
+                for (int k = 0; k < feature.windowFeature[j].length; k++){
+                    x[labelNum-1] = new svm_node();
+                    x[labelNum-1].index = labelNum;
+                    x[labelNum-1].value = feature.windowFeature[j][k];
+                    labelNum++;
+                }
+            }
+
+            double v;
+            if (predict_probability==1 && (svm_type==svm_parameter.C_SVC || svm_type==svm_parameter.NU_SVC))
+            {
+                v = svm.svm_predict_probability(model,x,prob_estimates);
+            }
+            else
+            {
+                v = svm.svm_predict(model,x);
+            }
+
+            Log.d(Static.DEBUG, "v: " + v);
+
+            double target = 1.0;
+
+            if(v == target)
+                ++correct;
+            error += (v-target)*(v-target);
+            sumv += v;
+            sumy += target;
+            sumvv += v*v;
+            sumyy += target*target;
+            sumvy += v*target;
+            ++total;
+        }
+
+        if(svm_type == svm_parameter.EPSILON_SVR ||
+                svm_type == svm_parameter.NU_SVR)
+        {
+            //svm_predict.info("Mean squared error = "+error/total+" (regression)\n");
+            return "Squared correlation coefficient = "+
+                    ((total*sumvy-sumv*sumy)*(total*sumvy-sumv*sumy))/
+                            ((total*sumvv-sumv*sumv)*(total*sumyy-sumy*sumy))+
+                    " (regression)\n";
+        }
+        else
+            return "Accuracy = "+(double)correct/total*100+
+                    "% ("+correct+"/"+total+") (classification)\n";
+    }
 
 	private static void predict(BufferedReader input, DataOutputStream output, svm_model model, int predict_probability) throws IOException
 	{

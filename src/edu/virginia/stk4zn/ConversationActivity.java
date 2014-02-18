@@ -13,7 +13,10 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import svm.libsvm.svm;
+import svm.libsvm.svm_model;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 
@@ -41,6 +44,8 @@ public class ConversationActivity extends Activity {
     private TextView messageText;
     private ArrayList<String> messages;
 
+    private svm_model model;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -52,6 +57,11 @@ public class ConversationActivity extends Activity {
         mfccText = (TextView) findViewById(R.id.mfccText);
         messages = new ArrayList<String>();
         pairedDevices = new HashSet<PairedDevice>();
+        try {
+            model = svm.svm_load_model1(Static.getModelFilepath());
+        } catch (IOException e) {
+            Log.d(Static.DEBUG,"failed loading model file");
+        }
 
 
         statusButton.setOnClickListener(new View.OnClickListener() {
@@ -220,7 +230,7 @@ public class ConversationActivity extends Activity {
 
             }
         }
-        processThread = new ProcessThread(this);
+        processThread = new ProcessThread(this, model);
         processThread.start();
     }
 

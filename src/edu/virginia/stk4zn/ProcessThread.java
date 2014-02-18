@@ -9,6 +9,9 @@ import audio.WaveHeader;
 import audio.feature.MFCCFeatureExtract;
 import audio.feature.Statistics;
 import audio.feature.WindowFeature;
+import svm.libsvm.svm_model;
+import svm.svm_predict;
+import svm.svm_scale;
 
 import java.util.List;
 
@@ -25,6 +28,7 @@ public class ProcessThread extends Thread {
     private int bufferSize = 0;
     private byte audioData[] = null;
     private WaveHeader header;
+    private svm_model model;
     
     
 
@@ -33,7 +37,7 @@ public class ProcessThread extends Thread {
 
     private String displayCoeffs;
 
-    public ProcessThread(ConversationActivity act) {
+    public ProcessThread(ConversationActivity act, svm_model model) {
         super("Analyze Audio Thread");
         this.act = act;
         //bufferSize = AudioRecord.getMinBufferSize(RECORDER_SAMPLERATE, RECORDER_CHANNELS, RECORDER_AUDIO_ENCODING);
@@ -45,6 +49,7 @@ public class ProcessThread extends Thread {
         recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
                 Static.AUDIO_RECORDER_SAMPLERATE, Static.AUDIO_RECORDER_CHANNELS, Static.AUDIO_RECORDER_AUDIO_ENCODING,
                 bufferSize);
+        this.model = model;
     }
 
     @Override
@@ -179,6 +184,16 @@ public class ProcessThread extends Thread {
             Log.d(Static.DEBUG,"Failed analyzing audio");
             return;
         }
+
+        final String result = svm_predict.predictRealtime(lst, model, 0);
+        act.getHandler().post(new Runnable() {
+
+
+            @Override
+            public void run() {
+                act.displayMFCC(result);
+            }
+        }); 
 
 
         /*

@@ -1,5 +1,6 @@
 package svm;
 import android.util.Log;
+import audio.feature.WindowFeature;
 import edu.virginia.stk4zn.Static;
 
 import java.io.*;
@@ -92,6 +93,7 @@ public class svm_scale
 		line = fp.readLine();
 		return line;
 	}
+
 
 	public void run(String []argv) throws IOException
 	{

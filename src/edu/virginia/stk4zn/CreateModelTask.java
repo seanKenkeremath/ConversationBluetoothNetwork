@@ -52,6 +52,7 @@ public class CreateModelTask extends AsyncTask<String, Integer, Boolean> {
         }
 
 
+        /*
         try {
             svm_scale scaler = new svm_scale();
             String[] args = {Static.getTrainingFilepath()};
@@ -59,11 +60,14 @@ public class CreateModelTask extends AsyncTask<String, Integer, Boolean> {
         } catch (IOException e) {
             Log.d(Static.DEBUG,"Failed scaling training file");
         }
+        */
 
 
         try {
             svm_train trainer = new svm_train();
-            String[] args = {Static.getScaledTrainingFilepath(), Static.getModelFilepath()};
+            //String[] args = {Static.getScaledTrainingFilepath(), Static.getModelFilepath()};
+            String[] args = {Static.getTrainingFilepath(), Static.getModelFilepath()};
+
             trainer.run(args);
         } catch (IOException e) {
             Log.d(Static.DEBUG, "Failed creating model file");
