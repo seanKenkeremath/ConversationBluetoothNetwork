@@ -94,7 +94,6 @@ public class svm_scale
 		return line;
 	}
 
-
 	public void run(String []argv) throws IOException
 	{
         Log.d(Static.DEBUG,"running svm_scale");

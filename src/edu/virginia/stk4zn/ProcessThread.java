@@ -13,6 +13,9 @@ import svm.libsvm.svm_model;
 import svm.svm_predict;
 import svm.svm_scale;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -185,7 +188,17 @@ public class ProcessThread extends Thread {
             return;
         }
 
-        final String result = svm_predict.predictRealtime(lst, model, 0);
+
+/*
+        svm_scale scaler = new svm_scale();
+        String scaledMFCC = scaler.scaleRealtime(lst);
+        ArrayList<String> scaledMFCCs = new ArrayList<String>(Arrays.asList(scaledMFCC.split("\n")));
+        for (String mfcc: scaledMFCCs){
+            Log.d("TEST", mfcc);
+        }
+        try {
+
+        final String result = svm_predict.predictRealtime2(scaledMFCCs, model, 0);
         act.getHandler().post(new Runnable() {
 
 
@@ -193,7 +206,12 @@ public class ProcessThread extends Thread {
             public void run() {
                 act.displayMFCC(result);
             }
-        }); 
+        });
+
+        } catch (IOException e) {
+            Log.d(Static.DEBUG, " Failed classifying");
+        }
+*/
 
 
         /*

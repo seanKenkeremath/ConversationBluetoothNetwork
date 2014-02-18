@@ -73,12 +73,12 @@ public class WindowFeature {
 		//10:stat1_feature2 11:stat1_feature2 ...
 		//20:stat1_feature3 ...
 		StringBuilder result = new StringBuilder();
-	    String NEW_LINE = System.getProperty("line.separator");
+	    String NEW_LINE = System.getProperty("\n");
 	    
 		int i = 0;
 		for(double[] stats : windowFeature){	//set of statistics of each feature
 			for(double value: stats){
-				result.append(i+":"+(float)value+" ");
+				result.append((i+1)+":"+(float)value+" ");
 				i++;
 			}
 			

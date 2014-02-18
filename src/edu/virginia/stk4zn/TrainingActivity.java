@@ -25,7 +25,6 @@ public class TrainingActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.training);
         handler = new Handler();
-
         init();
     }
 
@@ -74,6 +73,7 @@ public class TrainingActivity extends Activity {
                 TrainingActivity.this.finish();
             }
         });
+        enableTraining();
 
     }
 
