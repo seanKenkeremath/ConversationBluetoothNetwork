@@ -13,7 +13,7 @@ import svm.libsvm.svm_model;
 import svm.svm_predict;
 import svm.svm_scale;
 
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -32,6 +32,12 @@ public class ProcessThread extends Thread {
     private byte audioData[] = null;
     private WaveHeader header;
     private svm_model model;
+    private File dataBuffer;
+    private File scaledDataFile;
+    private File outputFile;
+    private static String FILENAME = "TEMPDATA";
+    private static String SCALED_FILENAME = "SCALEDTEMPDATA";
+    private static String OUTPUT_FILENAME = "TEMPOUT";
     
     
 
@@ -53,6 +59,7 @@ public class ProcessThread extends Thread {
                 Static.AUDIO_RECORDER_SAMPLERATE, Static.AUDIO_RECORDER_CHANNELS, Static.AUDIO_RECORDER_AUDIO_ENCODING,
                 bufferSize);
         this.model = model;
+
     }
 
     @Override
@@ -161,57 +168,93 @@ public class ProcessThread extends Thread {
         double Tw = Static.AUDIO_FRAME_DURATION; // analysis frame duration (ms)
         double Ts = Static.AUDIO_FRAME_SHIFT; // analysis frame shift (ms)
         double Wl = Static.AUDIO_WINDOW_SIZE; // window duration (second)
-        /*
-        Log.d(ConversationActivity.DEBUG,"Signal Length: " + inputSignal.length + " FS: " + Fs);
-        Log.d(ConversationActivity.DEBUG,"Byte Rate: " + storedWave.getWaveHeader().getByteRate());
-        Log.d(ConversationActivity.DEBUG,"Bits Per Sample: " + storedWave.getWaveHeader().getBitsPerSample());
-        */
 
 
         MFCCFeatureExtract mfccFeatures = new MFCCFeatureExtract(inputSignal,
                 Tw, Ts, Fs, Wl);
 
-        /*
-		 Log.d(ConversationActivity.DEBUG,"12 MFCCs of each frame:");
-		 Log.d(ConversationActivity.DEBUG,mfccFeatures.toString()); //12 MFCC for each frame
-		 */
-
-
+        //351 mfcc features
         List<WindowFeature> lst = mfccFeatures.getListOfWindowFeature();
-		/*
-		 * Log.d(DEBUG_TAG,"List of Window Features:"); for(WindowFeature
-		 * wf:lst){ Log.d(DEBUG_TAG,wf.toString()); }
-		 */
 
+        //if not noise
+        if (lst.get(0).windowFeature[0][0] < 65){
+            //display results in UI thread
+            act.getHandler().post(new Runnable(){
+
+                @Override
+                public void run() {
+                    act.displayMFCC("Silence");
+                }
+            });
+
+            return;
+        }
         if (lst.size()==0){
             Log.d(Static.DEBUG,"Failed analyzing audio");
             return;
         }
 
-
-/*
-        svm_scale scaler = new svm_scale();
-        String scaledMFCC = scaler.scaleRealtime(lst);
-        ArrayList<String> scaledMFCCs = new ArrayList<String>(Arrays.asList(scaledMFCC.split("\n")));
-        for (String mfcc: scaledMFCCs){
-            Log.d("TEST", mfcc);
-        }
+        //write mfcc features to temp file in format accepted by svm_scale
         try {
-
-        final String result = svm_predict.predictRealtime2(scaledMFCCs, model, 0);
-        act.getHandler().post(new Runnable() {
-
-
-            @Override
-            public void run() {
-                act.displayMFCC(result);
-            }
-        });
-
+            File outputDir = act.getCacheDir(); // context being the Activity pointer
+            dataBuffer = File.createTempFile(FILENAME, Static.TRAINING_FILE_EXTENSION, outputDir);
+            WriteDataToFile(lst, dataBuffer);
         } catch (IOException e) {
-            Log.d(Static.DEBUG, " Failed classifying");
+            Log.d(Static.DEBUG,"Failed writing data to buffer");
         }
-*/
+
+        //scale mfcc features from temp file and save them in another temp file for svm_predict to read
+        try {
+            File outputDir = act.getCacheDir(); // context being the Activity pointer
+            scaledDataFile = File.createTempFile(SCALED_FILENAME, Static.TRAINING_FILE_EXTENSION, outputDir);
+            svm_scale scaler = new svm_scale();
+            String[] args = {dataBuffer.getAbsolutePath(), scaledDataFile.getAbsolutePath()};
+            scaler.run(args);
+        } catch (IOException e) {
+            Log.d(Static.DEBUG,"Failed scaling data buffer");
+        }
+
+
+        // run svm_predict on scaled temp file and output results into a final temp file
+        try {
+            File outputDir = act.getCacheDir(); // context being the Activity pointer
+            outputFile = File.createTempFile(OUTPUT_FILENAME, ".txt", outputDir);
+            BufferedReader input = new BufferedReader(new FileReader(scaledDataFile));
+            DataOutputStream output = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(outputFile)));
+            svm_predict.predict(input, output, model, 0);
+            input.close();
+            output.close();
+        } catch (FileNotFoundException e){
+            Log.d(Static.DEBUG,"predict files not found");
+        } catch (IOException e) {
+            Log.d(Static.DEBUG, "failed classification");
+        }
+
+        //parse message from temp file (could be a much more efficient process)
+        try {
+            StringBuilder dispMessage = new StringBuilder();
+            String nextLine;
+            BufferedReader read = new BufferedReader(new FileReader(outputFile));
+            while ((nextLine = read.readLine()) != null){
+                dispMessage.append(nextLine);
+            }
+
+            final String finalDisp = dispMessage.toString();
+
+            //display results in UI thread
+            act.getHandler().post(new Runnable(){
+
+                @Override
+                public void run() {
+                    act.displayMFCC(finalDisp);
+                }
+            });
+        } catch (Exception e) {
+            Log.d(Static.DEBUG,"Failed displaying classification data");
+        }
+
+
+
 
 
         /*
@@ -248,6 +291,34 @@ public class ProcessThread extends Thread {
 
 
 
+    }
+
+    private void WriteDataToFile(List<WindowFeature> samples, File file) throws IOException{
+
+        if (!file.exists()){
+            file.createNewFile();
+        }
+
+        FileWriter fp = new FileWriter(file, false);
+        for(WindowFeature wf: samples){
+
+            if (wf.windowFeature[0][0] == Double.NEGATIVE_INFINITY || wf.windowFeature[0][0] == Double.POSITIVE_INFINITY){
+                continue;
+            }
+            fp.write("+1" + " ");
+
+            int featureIndex = 1;	//start at 1
+            for(double[] stats : wf.windowFeature){	//set of statistics of each feature
+                for(double value: stats){
+                    fp.write(featureIndex + ":" + (float) value + " ");
+                    featureIndex++;
+                }
+            }
+            fp.write("\n");
+        }
+
+        fp.flush();
+        fp.close();
     }
 
 

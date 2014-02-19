@@ -50,7 +50,7 @@ public class svm_predict {
 	{
 		return Integer.parseInt(s);
 	}
-	private static void predict(BufferedReader input, DataOutputStream output, svm_model model, int predict_probability) throws IOException
+	public static void predict(BufferedReader input, DataOutputStream output, svm_model model, int predict_probability) throws IOException
 	{
 		int correct = 0;
 		int total = 0;

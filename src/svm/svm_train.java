@@ -100,7 +100,6 @@ public class svm_train {
 	
 	public void run(String argv[]) throws IOException
 	{
-        Log.d(Static.DEBUG, "Running svm_train to create model file");
 		parse_command_line(argv);
 		read_problem();
 		error_msg = svm.svm_check_parameter(prob,param);

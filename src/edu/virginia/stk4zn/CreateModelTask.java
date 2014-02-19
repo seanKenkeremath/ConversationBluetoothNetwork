@@ -37,7 +37,10 @@ public class CreateModelTask extends AsyncTask<String, Integer, Boolean> {
 
         File posFile = new File(trainingFilepath);
 
+
+        //append packaged negative mfcc values to positive trained
         try {
+            Log.d(Static.DEBUG, "Combining positive and negative samples");
             FileWriter writer = new FileWriter(posFile, true);
             BufferedReader negIn = new BufferedReader(new InputStreamReader(act.getResources().openRawResource(R.raw.neg_samp)));
             String line;
@@ -52,19 +55,21 @@ public class CreateModelTask extends AsyncTask<String, Integer, Boolean> {
         }
 
 
-
+        //scale appended dataset into new file
         try {
             svm_scale scaler = new svm_scale();
-            String[] args = {Static.getTrainingFilepath()};
+            Log.d(Static.DEBUG,"running svm_scale");
+            String[] args = {Static.getTrainingFilepath(), Static.getScaledTrainingFilepath()};
             scaler.run(args);
         } catch (IOException e) {
             Log.d(Static.DEBUG,"Failed scaling training file");
         }
 
 
-
+        //train on scaled data
         try {
             svm_train trainer = new svm_train();
+            Log.d(Static.DEBUG, "Running svm_train to create model file");
             String[] args = {Static.getScaledTrainingFilepath(), Static.getModelFilepath()};
 
             trainer.run(args);

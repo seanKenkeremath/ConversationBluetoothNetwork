@@ -123,6 +123,9 @@ public class PositiveTrainingThread extends Thread {
         }
 
         // if not noise ...
+        if (lst.get(0).windowFeature[0][0] < 65){
+            return;
+        }
 
         samples.addAll(lst);
 
