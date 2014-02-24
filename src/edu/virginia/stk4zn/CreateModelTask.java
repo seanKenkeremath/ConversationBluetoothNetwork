@@ -59,8 +59,8 @@ public class CreateModelTask extends AsyncTask<String, Integer, Boolean> {
         try {
             svm_scale scaler = new svm_scale();
             Log.d(Static.DEBUG,"running svm_scale");
-            String[] args = {Static.getTrainingFilepath(), Static.getScaledTrainingFilepath()};
-            scaler.run(args);
+            String[] args = {Static.getTrainingFilepath()};
+            scaler.run(args, Static.getScaledTrainingFilepath());
         } catch (IOException e) {
             Log.d(Static.DEBUG,"Failed scaling training file");
         }

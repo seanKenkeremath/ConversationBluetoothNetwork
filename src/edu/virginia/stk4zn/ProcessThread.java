@@ -1,21 +1,17 @@
 package edu.virginia.stk4zn;
 
-import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.util.Log;
 import audio.Wave;
 import audio.WaveHeader;
 import audio.feature.MFCCFeatureExtract;
-import audio.feature.Statistics;
 import audio.feature.WindowFeature;
 import svm.libsvm.svm_model;
 import svm.svm_predict;
 import svm.svm_scale;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -33,11 +29,9 @@ public class ProcessThread extends Thread {
     private WaveHeader header;
     private svm_model model;
     private File dataBuffer;
-    private File scaledDataFile;
-    private File outputFile;
-    private static String FILENAME = "TEMPDATA";
-    private static String SCALED_FILENAME = "SCALEDTEMPDATA";
-    private static String OUTPUT_FILENAME = "TEMPOUT";
+    //private File scaledDataFile;
+    //private File outputFile;
+
     
     
 
@@ -175,7 +169,7 @@ public class ProcessThread extends Thread {
 
         //351 mfcc features
         List<WindowFeature> lst = mfccFeatures.getListOfWindowFeature();
-
+        /*
         //if not noise
         if (lst.get(0).windowFeature[0][0] < 65){
             //display results in UI thread
@@ -189,6 +183,9 @@ public class ProcessThread extends Thread {
 
             return;
         }
+
+        */
+
         if (lst.size()==0){
             Log.d(Static.DEBUG,"Failed analyzing audio");
             return;
@@ -196,8 +193,11 @@ public class ProcessThread extends Thread {
 
         //write mfcc features to temp file in format accepted by svm_scale
         try {
+            /*
             File outputDir = act.getCacheDir(); // context being the Activity pointer
-            dataBuffer = File.createTempFile(FILENAME, Static.TRAINING_FILE_EXTENSION, outputDir);
+            dataBuffer = File.createTempFile(Static.TEST_FILENAME, Static.TEST_FILE_EXT, outputDir);
+            */
+            dataBuffer = new File(Static.getTestFilepath());
             WriteDataToFile(lst, dataBuffer);
         } catch (IOException e) {
             Log.d(Static.DEBUG,"Failed writing data to buffer");
@@ -205,11 +205,19 @@ public class ProcessThread extends Thread {
 
         //scale mfcc features from temp file and save them in another temp file for svm_predict to read
         try {
+            //scaledDataFile = new File(Static.getScaledTestFilepath());
+            /*
             File outputDir = act.getCacheDir(); // context being the Activity pointer
-            scaledDataFile = File.createTempFile(SCALED_FILENAME, Static.TRAINING_FILE_EXTENSION, outputDir);
+            scaledDataFile = File.createTempFile(Static.TEST_SCALED_FILENAME, Static.TEST_FILE_EXT, outputDir);
+            */
             svm_scale scaler = new svm_scale();
-            String[] args = {dataBuffer.getAbsolutePath(), scaledDataFile.getAbsolutePath()};
-            scaler.run(args);
+            /*
+            String[] args = {dataBuffer.getAbsolutePath()};
+            scaler.run(args, scaledDataFile.getAbsolutePath());
+            */
+
+            String[] args = {Static.getTestFilepath()};
+            scaler.run(args, Static.getScaledTestFilepath());
         } catch (IOException e) {
             Log.d(Static.DEBUG,"Failed scaling data buffer");
         }
@@ -217,13 +225,20 @@ public class ProcessThread extends Thread {
 
         // run svm_predict on scaled temp file and output results into a final temp file
         try {
+            //outputFile = new File(Static.getTestOutputPath());
+            /*
             File outputDir = act.getCacheDir(); // context being the Activity pointer
-            outputFile = File.createTempFile(OUTPUT_FILENAME, ".txt", outputDir);
+            outputFile = File.createTempFile(Static.TEST_OUTPUT_FILENAME, Static.TEST_OUTPUT_EXT, outputDir);
+
             BufferedReader input = new BufferedReader(new FileReader(scaledDataFile));
             DataOutputStream output = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(outputFile)));
             svm_predict.predict(input, output, model, 0);
             input.close();
             output.close();
+            */
+            //String[] args = {scaledDataFile.getAbsolutePath(), Static.getModelFilepath(), outputFile.getAbsolutePath()};
+            String[] args = {Static.getScaledTestFilepath(), Static.getModelFilepath(), Static.getTestOutputPath()};
+            svm_predict.main(args);
         } catch (FileNotFoundException e){
             Log.d(Static.DEBUG,"predict files not found");
         } catch (IOException e) {
@@ -234,9 +249,10 @@ public class ProcessThread extends Thread {
         try {
             StringBuilder dispMessage = new StringBuilder();
             String nextLine;
-            BufferedReader read = new BufferedReader(new FileReader(outputFile));
+            //BufferedReader read = new BufferedReader(new FileReader(outputFile));
+            BufferedReader read = new BufferedReader(new FileReader(Static.getTestOutputPath()));
             while ((nextLine = read.readLine()) != null){
-                dispMessage.append(nextLine);
+                dispMessage.append(nextLine + "\n");
             }
 
             final String finalDisp = dispMessage.toString();

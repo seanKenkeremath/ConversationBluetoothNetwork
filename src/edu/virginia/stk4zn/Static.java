@@ -21,10 +21,10 @@ public class Static {
     public static final int AUDIO_RECORDER_AUDIO_ENCODING = AudioFormat.ENCODING_PCM_16BIT;
     public static final int AUDIO_CHANNELS = 1;
     public static final long AUDIO_BYTE_RATE = AUDIO_RECORDER_BPP * AUDIO_RECORDER_SAMPLERATE * AUDIO_CHANNELS/8;
-    public static final float AUDIO_WINDOW_SIZE = 1f; //seconds
+    public static final float AUDIO_WINDOW_SIZE = .5f; //seconds
     public static final float AUDIO_FRAME_DURATION = 25f; //ms
     public static final float AUDIO_FRAME_SHIFT = 10f; //ms
-    public static final float AUDIO_BUFFER_SECONDS = AUDIO_WINDOW_SIZE;
+    public static final float AUDIO_BUFFER_SECONDS = 6*AUDIO_WINDOW_SIZE;
     public static final int AUDIO_BUFFER_SIZE = (int) (AUDIO_RECORDER_SAMPLERATE*AUDIO_BUFFER_SECONDS);
 
     //training
@@ -100,6 +100,55 @@ public class Static {
     public final static UUID BLUETOOTH_SERVICE_UUID = UUID.fromString(BLUETOOTH_UUIDString);
 
 
+    //testing
+    public final static String TEST_FILENAME = "TEMPDATA";
+    public final static String TEST_SCALED_FILENAME = "scaled_TEMPDATA";
+    public final static String TEST_OUTPUT_FILENAME = "TEMPOUT";
+    public final static String TEST_OUTPUT_EXT = ".txt";
+    public final static String TEST_FILE_EXT = Static.TRAINING_FILE_EXTENSION;
+
+    public static String getTestOutputPath(){
+        String filepath = Environment.getExternalStorageDirectory().getPath();
+        File file = new File(filepath,Static.TRAINING_FOLDER);
+
+        if(!file.exists()){
+            file.mkdirs();
+        }
+        return (file.getAbsolutePath() + "/" + Static.TEST_OUTPUT_FILENAME+Static.TEST_OUTPUT_EXT);
+    }
+
+    public static String getTestFilepath(){
+        String filepath = Environment.getExternalStorageDirectory().getPath();
+        File file = new File(filepath,Static.TRAINING_FOLDER);
+
+        if(!file.exists()){
+            file.mkdirs();
+        }
+        return (file.getAbsolutePath() + "/" + Static.TEST_FILENAME+Static.TEST_FILE_EXT);
+    }
+
+    public static String getScaledTestFilepath(){
+        String filepath = Environment.getExternalStorageDirectory().getPath();
+        File file = new File(filepath,Static.TRAINING_FOLDER);
+
+        if(!file.exists()){
+            file.mkdirs();
+        }
+
+        String scaledTestFile = file.getAbsolutePath() + "/" +
+                Static.TEST_SCALED_FILENAME+Static.TEST_FILE_EXT;
+        File scaledFile = new File(scaledTestFile);
+
+        if (!scaledFile.exists()){
+            Log.d(Static.DEBUG, "scaled file does not exist.. creating new file");
+            try {
+                scaledFile.createNewFile();
+            } catch (IOException e) {
+                Log.d(Static.DEBUG,"Failed creating new scaled file");
+            }
+        }
+        return (scaledTestFile);
+    }
 
     //debug tag
     public final static String DEBUG = "SOCDEB";

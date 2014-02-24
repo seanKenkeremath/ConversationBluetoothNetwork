@@ -1,15 +1,8 @@
 package svm;
+import edu.virginia.stk4zn.Static;
+import svm.libsvm.*;
 import java.io.*;
 import java.util.*;
-
-import android.util.Log;
-import edu.virginia.stk4zn.Static;
-import svm.libsvm.svm;
-import svm.libsvm.svm_model;
-import svm.libsvm.svm_node;
-import svm.libsvm.svm_parameter;
-import svm.libsvm.svm_print_interface;
-import svm.libsvm.svm_problem;
 
 public class svm_train {
 	private svm_parameter param;		// set by parse_command_line
@@ -117,7 +110,7 @@ public class svm_train {
 		else
 		{
 			model = svm.svm_train(prob,param);
-			svm.svm_save_model(model_file_name,model);
+			//svm.svm_save_model(model_file_name,model);
 			
 		}
 	}
@@ -141,7 +134,8 @@ public class svm_train {
 		else
 		{
 			model = svm.svm_train(prob,param);
-			return svm.svm_save_model1(model_file_name,model);
+			//return svm.svm_save_model1(model_file_name,model);
+            return svm.svm_save_model1(Static.TRAINING_MODEL_FILENAME + Static.TRAINING_MODEL_FILE_EXT,model); //static
 			
 		}
 		return new byte[0];

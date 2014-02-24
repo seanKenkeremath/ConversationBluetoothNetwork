@@ -1,24 +1,7 @@
 package svm;
-
-import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
-import java.io.DataOutputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.StringTokenizer;
-
-import android.util.Log;
-import audio.feature.WindowFeature;
-import edu.virginia.stk4zn.Static;
-import svm.libsvm.svm;
-import svm.libsvm.svm_model;
-import svm.libsvm.svm_node;
-import svm.libsvm.svm_parameter;
-import svm.libsvm.svm_print_interface;
+import svm.libsvm.*;
+import java.io.*;
+import java.util.*;
 
 public class svm_predict {
 	private static svm_print_interface svm_print_null = new svm_print_interface()
@@ -50,6 +33,7 @@ public class svm_predict {
 	{
 		return Integer.parseInt(s);
 	}
+
 	public static void predict(BufferedReader input, DataOutputStream output, svm_model model, int predict_probability) throws IOException
 	{
 		int correct = 0;
@@ -135,9 +119,7 @@ public class svm_predict {
 				 "% ("+correct+"/"+total+") (classification)\n");
 	}
 
-
-
-    private static void exit_with_help()
+	private static void exit_with_help()
 	{
 		System.err.print("usage: svm_predict [options] test_file model_file output_file\n"
 		+"options:\n"
@@ -149,8 +131,10 @@ public class svm_predict {
 	public static void main(String argv[]) throws IOException
 	{
 		//////////////////////////////////////////
-		String[] args = new String[]{ "mfcc.test", "mfcc.train.model", "out"};
-		argv = args;
+		//String[] args = new String[]{ "mfcc.test", "mfcc.train.model", "out"};
+        //String[] args = new String[]{ "mfcc.test", "mfcc.train.model", "out"};
+
+        //argv = args;
 		
 		int i, predict_probability=0;
         	svm_print_string = svm_print_stdout;
@@ -179,7 +163,6 @@ public class svm_predict {
 		try 
 		{
 			BufferedReader input = new BufferedReader(new FileReader(argv[i]));
-
 			DataOutputStream output = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(argv[i+2])));
 //			svm_model model = svm.svm_load_model(argv[i+1]);
 			svm_model model = svm.svm_load_model1(argv[i+1]);
