@@ -27,10 +27,7 @@ public class ProcessThread extends Thread {
     private int bufferSize = 0;
     private byte audioData[] = null;
     private WaveHeader header;
-    private svm_model model;
     private File dataBuffer;
-    //private File scaledDataFile;
-    //private File outputFile;
 
     
     
@@ -38,9 +35,7 @@ public class ProcessThread extends Thread {
 
     private long dt = 0;
 
-    private String displayCoeffs;
-
-    public ProcessThread(ConversationActivity act, svm_model model) {
+    public ProcessThread(ConversationActivity act) {
         super("Analyze Audio Thread");
         this.act = act;
         //bufferSize = AudioRecord.getMinBufferSize(RECORDER_SAMPLERATE, RECORDER_CHANNELS, RECORDER_AUDIO_ENCODING);
@@ -52,7 +47,6 @@ public class ProcessThread extends Thread {
         recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
                 Static.AUDIO_RECORDER_SAMPLERATE, Static.AUDIO_RECORDER_CHANNELS, Static.AUDIO_RECORDER_AUDIO_ENCODING,
                 bufferSize);
-        this.model = model;
 
     }
 
@@ -154,9 +148,7 @@ public class ProcessThread extends Thread {
 
     private void analyzeAudio(){
 
-        //Log.d(ConversationActivity.DEBUG,"Analyzing..");
         Wave storedWave = new Wave(header, audioData);
-        //Log.d(ConversationActivity.DEBUG, "Sample Wave Length: " + storedWave.length());
         double[] inputSignal = storedWave.getSampleAmplitudes();
         int Fs = storedWave.getWaveHeader().getSampleRate();
         double Tw = Static.AUDIO_FRAME_DURATION; // analysis frame duration (ms)
@@ -193,51 +185,30 @@ public class ProcessThread extends Thread {
 
         //write mfcc features to temp file in format accepted by svm_scale
         try {
-            /*
-            File outputDir = act.getCacheDir(); // context being the Activity pointer
-            dataBuffer = File.createTempFile(Static.TEST_FILENAME, Static.TEST_FILE_EXT, outputDir);
-            */
             dataBuffer = new File(Static.getTestFilepath());
             WriteDataToFile(lst, dataBuffer);
         } catch (IOException e) {
             Log.d(Static.DEBUG,"Failed writing data to buffer");
         }
 
+        /*
         //scale mfcc features from temp file and save them in another temp file for svm_predict to read
         try {
-            //scaledDataFile = new File(Static.getScaledTestFilepath());
-            /*
-            File outputDir = act.getCacheDir(); // context being the Activity pointer
-            scaledDataFile = File.createTempFile(Static.TEST_SCALED_FILENAME, Static.TEST_FILE_EXT, outputDir);
-            */
             svm_scale scaler = new svm_scale();
-            /*
-            String[] args = {dataBuffer.getAbsolutePath()};
-            scaler.run(args, scaledDataFile.getAbsolutePath());
-            */
-
             String[] args = {Static.getTestFilepath()};
             scaler.run(args, Static.getScaledTestFilepath());
         } catch (IOException e) {
             Log.d(Static.DEBUG,"Failed scaling data buffer");
         }
 
+         */
+
 
         // run svm_predict on scaled temp file and output results into a final temp file
         try {
-            //outputFile = new File(Static.getTestOutputPath());
-            /*
-            File outputDir = act.getCacheDir(); // context being the Activity pointer
-            outputFile = File.createTempFile(Static.TEST_OUTPUT_FILENAME, Static.TEST_OUTPUT_EXT, outputDir);
+            //String[] args = {Static.getScaledTestFilepath(), Static.getModelFilepath(), Static.getTestOutputPath()};
+            String[] args = {Static.getTestFilepath(), Static.getModelFilepath(), Static.getTestOutputPath()};
 
-            BufferedReader input = new BufferedReader(new FileReader(scaledDataFile));
-            DataOutputStream output = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(outputFile)));
-            svm_predict.predict(input, output, model, 0);
-            input.close();
-            output.close();
-            */
-            //String[] args = {scaledDataFile.getAbsolutePath(), Static.getModelFilepath(), outputFile.getAbsolutePath()};
-            String[] args = {Static.getScaledTestFilepath(), Static.getModelFilepath(), Static.getTestOutputPath()};
             svm_predict.main(args);
         } catch (FileNotFoundException e){
             Log.d(Static.DEBUG,"predict files not found");
@@ -268,44 +239,6 @@ public class ProcessThread extends Thread {
         } catch (Exception e) {
             Log.d(Static.DEBUG,"Failed displaying classification data");
         }
-
-
-
-
-
-        /*
-        double[] coeffs = new double[39];
-        displayCoeffs = "";
-        for (int i = 0; i < 39; i++) {
-            double[] allWindows = new double[lst.size()];// do not count
-            // first window
-            for (int j = 0; j < lst.size(); j++) {
-
-                allWindows[j] = lst.get(j).windowFeature[i][0];
-
-				//Log.d(ConversationActivity.DEBUG_TAG, "mean windowFeature " + i + ": "
-				//		+ lst.get(j).windowFeature[i][0]);
-
-            }
-            coeffs[i] = Statistics.mean(allWindows);
-            displayCoeffs += "mean feature " + i + ": "
-                    + coeffs[i] + "\n";
-            //Log.d(ConversationActivity.DEBUG, message);
-            //act.sendMessageToAll(message);
-        }
-
-        act.getHandler().post(new Runnable() {
-
-
-            @Override
-            public void run() {
-                act.displayMFCC(displayCoeffs);
-            }
-        });
-        */
-
-
-
 
     }
 

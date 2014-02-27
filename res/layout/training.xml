@@ -8,8 +8,13 @@
     <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Train"
-            android:id="@+id/training_train" android:layout_gravity="center_horizontal"/>
+            android:text="Pos Train"
+            android:id="@+id/training_pos_train" android:layout_gravity="center_horizontal"/>
+    <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Neg Train"
+            android:id="@+id/training_neg_train" android:layout_gravity="center_horizontal"/>
     <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

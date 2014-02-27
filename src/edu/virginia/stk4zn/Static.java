@@ -29,11 +29,29 @@ public class Static {
 
     //training
     public static final String TRAINING_FOLDER = "SocInt";
-    public static final String TRAINING_FILENAME = "training";
-    public static final String TRAINING_FILE_EXTENSION = ".train";
-    public static final String TRAINING_SCALED_FILENAME = "scaled_training";
+    private static final String TRAINING_FILENAME = "training";
+    private static final String TRAINING_FILE_EXTENSION = ".train";
+    private static final String TRAINING_NEGATIVE_FILENAME = "negative_samples";
+    private static final String TRAINING_SCALED_FILENAME = "scaled_training";
     public static final String TRAINING_MODEL_FILENAME = "model";
     public static final String TRAINING_MODEL_FILE_EXT = ".model";
+
+
+    public static String getNegativeTrainingFilepath(){
+        String filepath = Environment.getExternalStorageDirectory().getPath();
+        File file = new File(filepath,Static.TRAINING_FOLDER);
+
+        if(!file.exists()){
+            file.mkdirs();
+        }
+
+        String negative_filepath = (file.getAbsolutePath() + "/" +
+                Static.TRAINING_NEGATIVE_FILENAME+Static.TRAINING_FILE_EXTENSION);
+
+        File negativeTrainingFile = new File(negative_filepath);
+
+        return negative_filepath;
+    }
 
     public static String getTrainingFilepath(){
         String filepath = Environment.getExternalStorageDirectory().getPath();

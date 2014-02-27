@@ -35,14 +35,15 @@ public class CreateModelTask extends AsyncTask<String, Integer, Boolean> {
     protected Boolean doInBackground(String... params) {
         String trainingFilepath = params[0];
 
-        File posFile = new File(trainingFilepath);
 
-
-        //append packaged negative mfcc values to positive trained
+        //append negative mfcc values to positive trained
         try {
+            File posFile = new File(trainingFilepath);
+            File negFile = new File(Static.getNegativeTrainingFilepath());
             Log.d(Static.DEBUG, "Combining positive and negative samples");
             FileWriter writer = new FileWriter(posFile, true);
-            BufferedReader negIn = new BufferedReader(new InputStreamReader(act.getResources().openRawResource(R.raw.neg_samp)));
+            //BufferedReader negIn = new BufferedReader(new InputStreamReader(act.getResources().openRawResource(R.raw.neg_samp)));
+            BufferedReader negIn = new BufferedReader(new FileReader(negFile));
             String line;
             while ((line = negIn.readLine())!=null){
                 writer.append(line + "\n");
@@ -55,6 +56,9 @@ public class CreateModelTask extends AsyncTask<String, Integer, Boolean> {
         }
 
 
+
+
+        /*
         //scale appended dataset into new file
         try {
             svm_scale scaler = new svm_scale();
@@ -64,20 +68,22 @@ public class CreateModelTask extends AsyncTask<String, Integer, Boolean> {
         } catch (IOException e) {
             Log.d(Static.DEBUG,"Failed scaling training file");
         }
-
+               */
 
         //train on scaled data
         try {
             svm_train trainer = new svm_train();
             Log.d(Static.DEBUG, "Running svm_train to create model file");
-            String[] args = {Static.getScaledTrainingFilepath(), Static.getModelFilepath()};
+            //String[] args = {Static.getScaledTrainingFilepath(), Static.getModelFilepath()};
+            String[] args = {Static.getTrainingFilepath(), Static.getModelFilepath()};
+
 
             trainer.run(args);
         } catch (IOException e) {
             Log.d(Static.DEBUG, "Failed creating model file");
         }
 
-
+        Log.d(Static.DEBUG, "Model file created");
         return true;
     }
 }

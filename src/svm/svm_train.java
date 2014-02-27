@@ -1,5 +1,4 @@
 package svm;
-import edu.virginia.stk4zn.Static;
 import svm.libsvm.*;
 import java.io.*;
 import java.util.*;
@@ -110,45 +109,17 @@ public class svm_train {
 		else
 		{
 			model = svm.svm_train(prob,param);
-			//svm.svm_save_model(model_file_name,model);
+			svm.svm_save_model(model_file_name,model);
 			
 		}
 	}
-	
-	private byte[] run1(String argv[]) throws IOException
-	{	//return byte array of the model // need to see the cross_validation
-		parse_command_line(argv);
-		read_problem();
-		error_msg = svm.svm_check_parameter(prob,param);
 
-		if(error_msg != null)
-		{
-			System.err.print("ERROR: "+error_msg+"\n");
-			System.exit(1);
-		}
 
-		if(cross_validation != 0)
-		{
-			do_cross_validation();
-		}
-		else
-		{
-			model = svm.svm_train(prob,param);
-			//return svm.svm_save_model1(model_file_name,model);
-            return svm.svm_save_model1(Static.TRAINING_MODEL_FILENAME + Static.TRAINING_MODEL_FILE_EXT,model); //static
-			
-		}
-		return new byte[0];
-	}
-	
-	
 
 	public static void main(String argv[]) throws IOException
 	{	
 		String[] args = new String[]{"mfcc.train"};
 		svm_train t = new svm_train();
-//		byte[] model_bytes;
-//		model_bytes = t.run1(args);
 		t.run(args);
 	}
 

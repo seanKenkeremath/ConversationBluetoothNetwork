@@ -13,8 +13,12 @@ import android.widget.Button;
  */
 public class TrainingActivity extends Activity {
 
-    private PositiveTrainingThread trainThread;
-    private Button startTraining;
+    private PositiveTrainingThread posTrainThread;
+    private NegativeTrainingThread negTrainThread;
+    private Button posTraining;
+    private boolean isPosTraining;
+    private Button negTraining;
+    private boolean isNegTraining;
     private Button stopTraining;
     private Button toConversation;
 
@@ -30,28 +34,43 @@ public class TrainingActivity extends Activity {
 
     public void enableTraining(){
         stopTraining.setEnabled(false);
-        startTraining.setEnabled(true);
+        posTraining.setEnabled(true);
+        negTraining.setEnabled(true);
         toConversation.setEnabled(true);
     }
 
     public void disableTraining(boolean stopEnabled){
-        startTraining.setEnabled(false);
+        posTraining.setEnabled(false);
+        negTraining.setEnabled(false);
         stopTraining.setEnabled(stopEnabled);
         toConversation.setEnabled(false);
     }
     private void init(){
 
-        startTraining = (Button) findViewById(R.id.training_train);
+        isPosTraining = false;
+        isNegTraining =false;
+
+        posTraining = (Button) findViewById(R.id.training_pos_train);
+        negTraining = (Button) findViewById(R.id.training_neg_train);
         stopTraining = (Button) findViewById(R.id.training_stop);
         toConversation = (Button) findViewById(R.id.training_toConversation);
 
 
-        startTraining.setOnClickListener(new View.OnClickListener(){
+        posTraining.setOnClickListener(new View.OnClickListener(){
 
             @Override
             public void onClick(View v) {
                 disableTraining(true);
-                startTraining();
+                startPositiveTraining();
+            }
+        });
+
+        negTraining.setOnClickListener(new View.OnClickListener(){
+
+            @Override
+            public void onClick(View v) {
+                disableTraining(true);
+                startNegativeTraining();
             }
         });
 
@@ -77,25 +96,52 @@ public class TrainingActivity extends Activity {
 
     }
 
-    private void startTraining(){
-        if (trainThread!=null){
-            trainThread.cancel();
+    private void startPositiveTraining(){
+        isPosTraining = true;
+        if (posTrainThread!=null){
+            posTrainThread.cancel();
             try {
                 Log.d(Static.DEBUG, "joining previous Positive Training Thread");
-                trainThread.join();
+                posTrainThread.join();
             } catch (InterruptedException e) {
                 Log.d(Static.DEBUG, "Interrupted joining Positive Training Thread");
 
             }
         }
-        trainThread = new PositiveTrainingThread(this);
-        trainThread.start();
+        posTrainThread = new PositiveTrainingThread(this);
+        posTrainThread.start();
+    }
+
+    private void startNegativeTraining(){
+        isNegTraining = true;
+        if (negTrainThread!=null){
+            negTrainThread.cancel();
+            try {
+                Log.d(Static.DEBUG, "joining previous Negative Training Thread");
+                negTrainThread.join();
+            } catch (InterruptedException e) {
+                Log.d(Static.DEBUG, "Interrupted joining Negative Training Thread");
+
+            }
+        }
+        negTrainThread = new NegativeTrainingThread(this);
+        negTrainThread.start();
     }
 
     private void stopTraining(){
-        if (trainThread!=null){
-            trainThread.cancel();
+        if (isPosTraining){
+            if (posTrainThread!=null){
+                posTrainThread.cancel();
+            }
+            isPosTraining = false;
         }
+        else if (isNegTraining){
+            if (negTrainThread!=null){
+                negTrainThread.cancel();
+            }
+            isNegTraining = false;
+        }
+
 
     }
 
