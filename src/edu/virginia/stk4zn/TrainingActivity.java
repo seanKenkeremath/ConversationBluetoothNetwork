@@ -7,6 +7,7 @@ import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 
 /**
  * Created by sean on 2/10/14.
@@ -21,6 +22,7 @@ public class TrainingActivity extends Activity {
     private boolean isNegTraining;
     private Button stopTraining;
     private Button toConversation;
+    private EditText logNameField;
 
     private Handler handler;
 
@@ -54,7 +56,7 @@ public class TrainingActivity extends Activity {
         negTraining = (Button) findViewById(R.id.training_neg_train);
         stopTraining = (Button) findViewById(R.id.training_stop);
         toConversation = (Button) findViewById(R.id.training_toConversation);
-
+        logNameField = (EditText) findViewById(R.id.training_log_name);
 
         posTraining.setOnClickListener(new View.OnClickListener(){
 
@@ -88,6 +90,11 @@ public class TrainingActivity extends Activity {
             @Override
             public void onClick(View v) {
                 Intent convIntent = new Intent(TrainingActivity.this,ConversationActivity.class);
+                String logName = logNameField.getText().toString();
+                if (logName==""){
+                    logName = "log";
+                }
+                convIntent.putExtra(Static.LOG_LOGNAME_BUNDLE_KEY,logName);
                 TrainingActivity.this.startActivity(convIntent);
                 TrainingActivity.this.finish();
             }
@@ -130,6 +137,7 @@ public class TrainingActivity extends Activity {
 
     private void stopTraining(){
         if (isPosTraining){
+            disableTraining(false);
             if (posTrainThread!=null){
                 posTrainThread.cancel();
             }

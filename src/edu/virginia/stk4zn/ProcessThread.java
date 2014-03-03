@@ -12,6 +12,7 @@ import svm.svm_predict;
 import svm.svm_scale;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -29,14 +30,16 @@ public class ProcessThread extends Thread {
     private WaveHeader header;
     private File dataBuffer;
 
+    private String logName;
     
     
 
 
     private long dt = 0;
 
-    public ProcessThread(ConversationActivity act) {
+    public ProcessThread(ConversationActivity act, String logName) { //pass null for logName to skip logging
         super("Analyze Audio Thread");
+        this.logName = logName;
         this.act = act;
         //bufferSize = AudioRecord.getMinBufferSize(RECORDER_SAMPLERATE, RECORDER_CHANNELS, RECORDER_AUDIO_ENCODING);
         bufferSize = Static.AUDIO_BUFFER_SIZE;
@@ -54,6 +57,17 @@ public class ProcessThread extends Thread {
     public void run(){
 
         startRecording();
+
+        //if log file already exists, delete previous
+        File log = new File(Static.getLogOutputPath(logName));
+        if (log.exists()){
+            log.delete();
+        }
+        try {
+            createLogHeader(log);
+        } catch (IOException e) {
+            Log.d(Static.DEBUG,"Failed writing log header");
+        }
 
         waiting = true;
 
@@ -204,7 +218,7 @@ public class ProcessThread extends Thread {
          */
 
 
-        // run svm_predict on scaled temp file and output results into a final temp file
+        // run svm_predict and output results into a final temp file
         try {
             //String[] args = {Static.getScaledTestFilepath(), Static.getModelFilepath(), Static.getTestOutputPath()};
             String[] args = {Static.getTestFilepath(), Static.getModelFilepath(), Static.getTestOutputPath()};
@@ -217,15 +231,42 @@ public class ProcessThread extends Thread {
         }
 
         //parse message from temp file (could be a much more efficient process)
+        ArrayList<Double> classificationResults = new ArrayList<Double>();
+        boolean speaking = true; //set to false if any classification is negative
+        StringBuilder dispMessage = new StringBuilder();
+        StringBuilder logMessage = new StringBuilder();
+
         try {
-            StringBuilder dispMessage = new StringBuilder();
+
             String nextLine;
-            //BufferedReader read = new BufferedReader(new FileReader(outputFile));
             BufferedReader read = new BufferedReader(new FileReader(Static.getTestOutputPath()));
             while ((nextLine = read.readLine()) != null){
                 dispMessage.append(nextLine + "\n");
+                classificationResults.add(Double.parseDouble(nextLine));
             }
 
+            //if any classifications are negative user is not speaking
+            for (Double result: classificationResults){
+                if (result < 0){
+                    speaking = false;
+                }
+            }
+
+            logMessage.append(System.currentTimeMillis()+",");
+
+            if (speaking){
+                dispMessage.append("Speaking\n");
+                logMessage.append(1 + ",");
+            } else{
+                dispMessage.append("Not Speaking\n");
+                logMessage.append(0 + ",");
+            }
+
+            if (act.speaking_truth){
+                logMessage.append(1 + "\n");
+            } else {
+                logMessage.append(0 + "\n");
+            }
             final String finalDisp = dispMessage.toString();
 
             //display results in UI thread
@@ -240,6 +281,30 @@ public class ProcessThread extends Thread {
             Log.d(Static.DEBUG,"Failed displaying classification data");
         }
 
+        try {
+            logData(logMessage.toString(), new File(Static.getLogOutputPath(this.logName)));
+        } catch (IOException e) {
+            Log.d(Static.DEBUG,"Failed logging data");
+        }
+    }
+
+    private void createLogHeader(File file) throws IOException{
+        if (!file.exists()){
+            file.createNewFile();
+        }
+        FileWriter fp = new FileWriter(file, false);
+        fp.write("Time, Classification, Truth\n");
+        fp.close();
+    }
+
+    private void logData(String logLine, File file) throws IOException{
+        if (!file.exists()){
+            file.createNewFile();
+        }
+        FileWriter fp = new FileWriter(file, true);
+        fp.write(logLine);
+
+        fp.close();
     }
 
     private void WriteDataToFile(List<WindowFeature> samples, File file) throws IOException{

@@ -27,5 +27,16 @@
             android:layout_height="wrap_content"
             android:text=""
             android:id="@+id/mfccText" android:layout_gravity="right"/>
+    <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Speak"
+            android:id="@+id/speakButton" android:layout_gravity="center_horizontal"/>
+    <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="Not Speaking (Truth)"
+            android:id="@+id/speakText" android:layout_gravity="center_horizontal"/>
 </LinearLayout>
 

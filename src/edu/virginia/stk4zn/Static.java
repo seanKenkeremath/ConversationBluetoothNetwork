@@ -27,6 +27,8 @@ public class Static {
     public static final float AUDIO_BUFFER_SECONDS = 6*AUDIO_WINDOW_SIZE;
     public static final int AUDIO_BUFFER_SIZE = (int) (AUDIO_RECORDER_SAMPLERATE*AUDIO_BUFFER_SECONDS);
 
+
+
     //training
     public static final String TRAINING_FOLDER = "SocInt";
     private static final String TRAINING_FILENAME = "training";
@@ -35,6 +37,8 @@ public class Static {
     private static final String TRAINING_SCALED_FILENAME = "scaled_training";
     public static final String TRAINING_MODEL_FILENAME = "model";
     public static final String TRAINING_MODEL_FILE_EXT = ".model";
+
+
 
 
     public static String getNegativeTrainingFilepath(){
@@ -117,6 +121,20 @@ public class Static {
     private final static String BLUETOOTH_UUIDString = "662ab3f4-c79c-11d1-3a37-a500712cf000";
     public final static UUID BLUETOOTH_SERVICE_UUID = UUID.fromString(BLUETOOTH_UUIDString);
 
+    //log
+    public static final String LOG_LOGNAME_BUNDLE_KEY = "Logname";
+    public static final String LOG_FOLDER = TRAINING_FOLDER+"/log";
+    public static final String LOG_FILE_EXT = ".csv";
+
+    public static String getLogOutputPath(String logname){
+        String filepath = Environment.getExternalStorageDirectory().getPath();
+        File file = new File(filepath,Static.LOG_FOLDER);
+
+        if(!file.exists()){
+            file.mkdirs();
+        }
+        return (file.getAbsolutePath() + "/" + logname+Static.LOG_FILE_EXT);
+    }
 
     //testing
     public final static String TEST_FILENAME = "TEMPDATA";

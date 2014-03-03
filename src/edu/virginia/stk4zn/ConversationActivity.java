@@ -27,11 +27,16 @@ public class ConversationActivity extends Activity {
 
     private final static int REQUEST_ENABLE_BT = 333;
 
+    public boolean speaking_truth;
+
 
     Button statusButton;
-
+    private Button speakingTruthButton;
 
     BluetoothAdapter adapt;
+
+    private String logName;
+
     private HashSet<PairedDevice> pairedDevices;
     private Handler handler;
 
@@ -42,14 +47,19 @@ public class ConversationActivity extends Activity {
     private TextView connectedText;
     private TextView mfccText;
     private TextView messageText;
+    private TextView speakingTruthText;
     private ArrayList<String> messages;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
+        speaking_truth = false;
+        logName = getIntent().getStringExtra(Static.LOG_LOGNAME_BUNDLE_KEY);
         handler = new Handler();
         statusButton = (Button) findViewById(R.id.timeButton);
+        speakingTruthButton = (Button) findViewById(R.id.speakButton);
+        speakingTruthText = (TextView) findViewById(R.id.speakText);
         connectedText = (TextView) findViewById(R.id.connectedText);
         messageText = (TextView) findViewById(R.id.messageText);
         mfccText = (TextView) findViewById(R.id.mfccText);
@@ -70,6 +80,20 @@ public class ConversationActivity extends Activity {
             }
         });
 
+
+        speakingTruthButton.setOnClickListener(new View.OnClickListener(){
+
+            @Override
+            public void onClick(View v) {
+                speaking_truth = !speaking_truth;
+                if (speaking_truth){
+                    speakingTruthText.setText("Speaking (Truth)");
+                } else {
+                    speakingTruthText.setText("Not Speaking (Truth)");
+                }
+
+            }
+        });
 
         initBluetooth();
         startProcessing();
@@ -223,7 +247,7 @@ public class ConversationActivity extends Activity {
 
             }
         }
-        processThread = new ProcessThread(this);
+        processThread = new ProcessThread(this, logName);
         processThread.start();
     }
 

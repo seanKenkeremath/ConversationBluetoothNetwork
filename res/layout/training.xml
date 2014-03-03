@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:orientation="vertical"
               android:layout_width="match_parent"
               android:layout_height="match_parent">
@@ -8,27 +8,37 @@
     <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Pos Train"
-            android:id="@+id/training_pos_train" android:layout_gravity="center_horizontal"/>
+            android:text="Conversation"
+            android:id="@+id/training_toConversation" android:layout_gravity="right|bottom"
+            android:layout_alignParentBottom="true" android:layout_alignParentLeft="true"
+            android:layout_alignParentRight="true"/>
     <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Neg Train"
-            android:id="@+id/training_neg_train" android:layout_gravity="center_horizontal"/>
-    <TextView
+            android:id="@+id/training_neg_train" android:layout_gravity="left|top"
+            android:layout_alignParentTop="true" android:layout_centerHorizontal="true"/>
+    <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="Sample Text"
-            android:id="@+id/training_tex" android:layout_gravity="center_horizontal"/>
+            android:text="Pos Train"
+            android:id="@+id/training_pos_train" android:layout_gravity="center_horizontal|top"
+            android:layout_below="@+id/training_neg_train" android:layout_alignLeft="@+id/training_neg_train"/>
     <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Stop"
-            android:id="@+id/training_stop" android:layout_gravity="center_horizontal"/>
-    <Button
+            android:id="@+id/training_stop" android:layout_gravity="right|top"
+            android:layout_below="@+id/training_pos_train" android:layout_centerHorizontal="true"/>
+    <EditText
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/training_log_name" android:layout_above="@+id/training_toConversation"
+            android:layout_alignParentRight="true"/>
+    <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Conversation"
-            android:id="@+id/training_toConversation" android:layout_gravity="right"/>
-</LinearLayout>
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="Log name"
+            android:id="@+id/training_log_name_label" android:layout_above="@+id/training_log_name" android:layout_alignParentLeft="true"/>
+</RelativeLayout>
