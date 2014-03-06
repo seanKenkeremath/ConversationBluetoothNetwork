@@ -26,6 +26,7 @@ public class Static {
     public static final float AUDIO_FRAME_SHIFT = 10f; //ms
     public static final float AUDIO_BUFFER_SECONDS = 6*AUDIO_WINDOW_SIZE;
     public static final int AUDIO_BUFFER_SIZE = (int) (AUDIO_RECORDER_SAMPLERATE*AUDIO_BUFFER_SECONDS);
+    public static final String AUDIO_NOISE_THRESHOLD_BUNDLE_NAME = "Threshold";
 
 
 

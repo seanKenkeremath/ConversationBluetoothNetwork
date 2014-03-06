@@ -41,4 +41,18 @@
             android:textAppearance="?android:attr/textAppearanceLarge"
             android:text="Log name"
             android:id="@+id/training_log_name_label" android:layout_above="@+id/training_log_name" android:layout_alignParentLeft="true"/>
+    <EditText
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:inputType="number"
+            android:ems="10"
+            android:id="@+id/training_threshold"
+            android:layout_above="@+id/training_log_name_label" android:layout_alignRight="@+id/training_stop"/>
+    <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="Threshold"
+            android:id="@+id/training_threshold_label"
+            android:layout_above="@+id/training_threshold" android:layout_alignParentLeft="true"/>
 </RelativeLayout>

@@ -16,6 +16,8 @@ import android.widget.TextView;
 import svm.libsvm.svm;
 import svm.libsvm.svm_model;
 
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -32,7 +34,7 @@ public class ConversationActivity extends Activity {
 
     Button statusButton;
     private Button speakingTruthButton;
-
+    private int noiseThreshold;
     BluetoothAdapter adapt;
 
     private String logName;
@@ -56,6 +58,7 @@ public class ConversationActivity extends Activity {
         setContentView(R.layout.main);
         speaking_truth = false;
         logName = getIntent().getStringExtra(Static.LOG_LOGNAME_BUNDLE_KEY);
+        noiseThreshold = getIntent().getIntExtra(Static.AUDIO_NOISE_THRESHOLD_BUNDLE_NAME,0);
         handler = new Handler();
         statusButton = (Button) findViewById(R.id.timeButton);
         speakingTruthButton = (Button) findViewById(R.id.speakButton);
@@ -95,6 +98,17 @@ public class ConversationActivity extends Activity {
             }
         });
 
+
+        //if log file already exists, delete previous
+        File log = new File(Static.getLogOutputPath(logName));
+        if (log.exists()){
+            log.delete();
+        }
+        try {
+            createLogHeader(log);
+        } catch (IOException e) {
+            Log.d(Static.DEBUG,"Failed writing log header");
+        }
         initBluetooth();
         startProcessing();
     }
@@ -247,7 +261,7 @@ public class ConversationActivity extends Activity {
 
             }
         }
-        processThread = new ProcessThread(this, logName);
+        processThread = new ProcessThread(this, logName, noiseThreshold);
         processThread.start();
     }
 
@@ -307,6 +321,16 @@ public class ConversationActivity extends Activity {
         }
     }
 
+
+
+    private void createLogHeader(File file) throws IOException {
+        if (!file.exists()){
+            file.createNewFile();
+        }
+        FileWriter fp = new FileWriter(file, false);
+        fp.write("Time, Classification, Truth\n");
+        fp.close();
+    }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent intent){

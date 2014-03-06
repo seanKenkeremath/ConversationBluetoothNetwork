@@ -9,6 +9,10 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+
 /**
  * Created by sean on 2/10/14.
  */
@@ -23,7 +27,7 @@ public class TrainingActivity extends Activity {
     private Button stopTraining;
     private Button toConversation;
     private EditText logNameField;
-
+    private EditText thresholdField;
     private Handler handler;
 
     @Override
@@ -57,7 +61,7 @@ public class TrainingActivity extends Activity {
         stopTraining = (Button) findViewById(R.id.training_stop);
         toConversation = (Button) findViewById(R.id.training_toConversation);
         logNameField = (EditText) findViewById(R.id.training_log_name);
-
+        thresholdField = (EditText) findViewById(R.id.training_threshold);
         posTraining.setOnClickListener(new View.OnClickListener(){
 
             @Override
@@ -94,7 +98,12 @@ public class TrainingActivity extends Activity {
                 if (logName==""){
                     logName = "log";
                 }
+                int threshold = 0;
+                if (thresholdField.getText().toString()!=null && !thresholdField.getText().toString().equals("")){
+                    threshold = Integer.parseInt(thresholdField.getText().toString());
+                }
                 convIntent.putExtra(Static.LOG_LOGNAME_BUNDLE_KEY,logName);
+                convIntent.putExtra(Static.AUDIO_NOISE_THRESHOLD_BUNDLE_NAME, threshold);
                 TrainingActivity.this.startActivity(convIntent);
                 TrainingActivity.this.finish();
             }
@@ -163,5 +172,7 @@ public class TrainingActivity extends Activity {
     public Handler getHandler(){
         return handler;
     }
+
+
 
 }

@@ -23,7 +23,7 @@ public class ProcessThread extends Thread {
 
     private ConversationActivity act;
     private boolean waiting;
-
+    private float noiseThreshold;
     private AudioRecord recorder = null;
     private int bufferSize = 0;
     private byte audioData[] = null;
@@ -37,10 +37,11 @@ public class ProcessThread extends Thread {
 
     private long dt = 0;
 
-    public ProcessThread(ConversationActivity act, String logName) { //pass null for logName to skip logging
+    public ProcessThread(ConversationActivity act, String logName, int noiseThreshold) { //pass null for logName to skip logging
         super("Analyze Audio Thread");
         this.logName = logName;
         this.act = act;
+        this.noiseThreshold = noiseThreshold;
         //bufferSize = AudioRecord.getMinBufferSize(RECORDER_SAMPLERATE, RECORDER_CHANNELS, RECORDER_AUDIO_ENCODING);
         bufferSize = Static.AUDIO_BUFFER_SIZE;
         Log.d(Static.DEBUG, "BufferSize " + bufferSize);
@@ -58,16 +59,6 @@ public class ProcessThread extends Thread {
 
         startRecording();
 
-        //if log file already exists, delete previous
-        File log = new File(Static.getLogOutputPath(logName));
-        if (log.exists()){
-            log.delete();
-        }
-        try {
-            createLogHeader(log);
-        } catch (IOException e) {
-            Log.d(Static.DEBUG,"Failed writing log header");
-        }
 
         waiting = true;
 
@@ -173,12 +164,20 @@ public class ProcessThread extends Thread {
         MFCCFeatureExtract mfccFeatures = new MFCCFeatureExtract(inputSignal,
                 Tw, Ts, Fs, Wl);
 
+        boolean silence = false;
+
         //351 mfcc features
         List<WindowFeature> lst = mfccFeatures.getListOfWindowFeature();
-        /*
+
+        if (lst.size()==0){
+            Log.d(Static.DEBUG,"Failed analyzing audio");
+            return;
+        }
+
         //if not noise
-        if (lst.get(0).windowFeature[0][0] < 65){
+        if (lst.get(0).windowFeature[0][0] < noiseThreshold){
             //display results in UI thread
+            silence = true;
             act.getHandler().post(new Runnable(){
 
                 @Override
@@ -187,70 +186,24 @@ public class ProcessThread extends Thread {
                 }
             });
 
-            return;
         }
 
-        */
-
-        if (lst.size()==0){
-            Log.d(Static.DEBUG,"Failed analyzing audio");
-            return;
-        }
-
-        //write mfcc features to temp file in format accepted by svm_scale
-        try {
-            dataBuffer = new File(Static.getTestFilepath());
-            WriteDataToFile(lst, dataBuffer);
-        } catch (IOException e) {
-            Log.d(Static.DEBUG,"Failed writing data to buffer");
-        }
-
-        /*
-        //scale mfcc features from temp file and save them in another temp file for svm_predict to read
-        try {
-            svm_scale scaler = new svm_scale();
-            String[] args = {Static.getTestFilepath()};
-            scaler.run(args, Static.getScaledTestFilepath());
-        } catch (IOException e) {
-            Log.d(Static.DEBUG,"Failed scaling data buffer");
-        }
-
-         */
-
-
-        // run svm_predict and output results into a final temp file
-        try {
-            //String[] args = {Static.getScaledTestFilepath(), Static.getModelFilepath(), Static.getTestOutputPath()};
-            String[] args = {Static.getTestFilepath(), Static.getModelFilepath(), Static.getTestOutputPath()};
-
-            svm_predict.main(args);
-        } catch (FileNotFoundException e){
-            Log.d(Static.DEBUG,"predict files not found");
-        } catch (IOException e) {
-            Log.d(Static.DEBUG, "failed classification");
-        }
-
-        //parse message from temp file (could be a much more efficient process)
-        ArrayList<Double> classificationResults = new ArrayList<Double>();
-        boolean speaking = true; //set to false if any classification is negative
+        boolean speaking = false;
         StringBuilder dispMessage = new StringBuilder();
-        StringBuilder logMessage = new StringBuilder();
+        dispMessage.append("MFCC 0: " + lst.get(0).windowFeature[0][0]+"\n");
 
+        if (!silence){
+        createInput(lst);
+        makePrediction();
         try {
+            speaking = getTestResult(dispMessage);
+        } catch (IOException e) {
+            Log.d(Static.DEBUG,"Failed getting prediction result");
+        }
 
-            String nextLine;
-            BufferedReader read = new BufferedReader(new FileReader(Static.getTestOutputPath()));
-            while ((nextLine = read.readLine()) != null){
-                dispMessage.append(nextLine + "\n");
-                classificationResults.add(Double.parseDouble(nextLine));
-            }
+        }
 
-            //if any classifications are negative user is not speaking
-            for (Double result: classificationResults){
-                if (result < 0){
-                    speaking = false;
-                }
-            }
+        StringBuilder logMessage = new StringBuilder();
 
             logMessage.append(System.currentTimeMillis()+",");
 
@@ -277,9 +230,6 @@ public class ProcessThread extends Thread {
                     act.displayMFCC(finalDisp);
                 }
             });
-        } catch (Exception e) {
-            Log.d(Static.DEBUG,"Failed displaying classification data");
-        }
 
         try {
             logData(logMessage.toString(), new File(Static.getLogOutputPath(this.logName)));
@@ -288,15 +238,53 @@ public class ProcessThread extends Thread {
         }
     }
 
-    private void createLogHeader(File file) throws IOException{
-        if (!file.exists()){
-            file.createNewFile();
+
+    private void createInput(List<WindowFeature> lst){
+        //write mfcc features to temp file in format accepted by svm_scale
+        try {
+            dataBuffer = new File(Static.getTestFilepath());
+            writeInputToFile(lst, dataBuffer);
+        } catch (IOException e) {
+            Log.d(Static.DEBUG,"Failed writing data to buffer");
         }
-        FileWriter fp = new FileWriter(file, false);
-        fp.write("Time, Classification, Truth\n");
-        fp.close();
+
     }
 
+    private void makePrediction(){
+        // run svm_predict and output results into a final temp file
+        try {
+            String[] args = {Static.getTestFilepath(), Static.getModelFilepath(), Static.getTestOutputPath()};
+
+            svm_predict.main(args);
+        } catch (FileNotFoundException e){
+            Log.d(Static.DEBUG,"predict files not found");
+        } catch (IOException e) {
+            Log.d(Static.DEBUG, "failed classification");
+        }
+    }
+
+    private boolean getTestResult(StringBuilder dispMessage) throws IOException {
+        //parse message from temp file (could be a much more efficient process)
+        ArrayList<Double> classificationResults = new ArrayList<Double>();
+        boolean speaking = true; //set to false if any classification is negative
+
+            String nextLine;
+            BufferedReader read = new BufferedReader(new FileReader(Static.getTestOutputPath()));
+            while ((nextLine = read.readLine()) != null){
+                dispMessage.append(nextLine + "\n");
+                classificationResults.add(Double.parseDouble(nextLine));
+            }
+
+            //if any classifications are negative user is not speaking
+            for (Double result: classificationResults){
+                if (result < 0){
+                    speaking = false;
+                }
+            }
+
+        return speaking;
+
+    }
     private void logData(String logLine, File file) throws IOException{
         if (!file.exists()){
             file.createNewFile();
@@ -307,7 +295,7 @@ public class ProcessThread extends Thread {
         fp.close();
     }
 
-    private void WriteDataToFile(List<WindowFeature> samples, File file) throws IOException{
+    private void writeInputToFile(List<WindowFeature> samples, File file) throws IOException{
 
         if (!file.exists()){
             file.createNewFile();
