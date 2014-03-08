@@ -21,10 +21,10 @@ public class Static {
     public static final int AUDIO_RECORDER_AUDIO_ENCODING = AudioFormat.ENCODING_PCM_16BIT;
     public static final int AUDIO_CHANNELS = 1;
     public static final long AUDIO_BYTE_RATE = AUDIO_RECORDER_BPP * AUDIO_RECORDER_SAMPLERATE * AUDIO_CHANNELS/8;
-    public static final float AUDIO_WINDOW_SIZE = .5f; //seconds
+    public static final float AUDIO_WINDOW_SIZE = 1f; //seconds
     public static final float AUDIO_FRAME_DURATION = 25f; //ms
     public static final float AUDIO_FRAME_SHIFT = 10f; //ms
-    public static final float AUDIO_BUFFER_SECONDS = 6*AUDIO_WINDOW_SIZE;
+    public static final float AUDIO_BUFFER_SECONDS = AUDIO_WINDOW_SIZE;
     public static final int AUDIO_BUFFER_SIZE = (int) (AUDIO_RECORDER_SAMPLERATE*AUDIO_BUFFER_SECONDS);
     public static final String AUDIO_NOISE_THRESHOLD_BUNDLE_NAME = "Threshold";
 
@@ -35,7 +35,7 @@ public class Static {
     private static final String TRAINING_FILENAME = "training";
     private static final String TRAINING_FILE_EXTENSION = ".train";
     private static final String TRAINING_NEGATIVE_FILENAME = "negative_samples";
-    private static final String TRAINING_SCALED_FILENAME = "scaled_training";
+    private static final String TRAINING_POSITIVE_FILENAME = "positive_samples";
     public static final String TRAINING_MODEL_FILENAME = "model";
     public static final String TRAINING_MODEL_FILE_EXT = ".model";
 
@@ -53,11 +53,22 @@ public class Static {
         String negative_filepath = (file.getAbsolutePath() + "/" +
                 Static.TRAINING_NEGATIVE_FILENAME+Static.TRAINING_FILE_EXTENSION);
 
-        File negativeTrainingFile = new File(negative_filepath);
-
         return negative_filepath;
     }
 
+    public static String getPositiveTrainingFilepath(){
+        String filepath = Environment.getExternalStorageDirectory().getPath();
+        File file = new File(filepath,Static.TRAINING_FOLDER);
+
+        if(!file.exists()){
+            file.mkdirs();
+        }
+
+        String positive_filepath = (file.getAbsolutePath() + "/" +
+                Static.TRAINING_POSITIVE_FILENAME+Static.TRAINING_FILE_EXTENSION);
+
+        return positive_filepath;
+    }
     public static String getTrainingFilepath(){
         String filepath = Environment.getExternalStorageDirectory().getPath();
         File file = new File(filepath,Static.TRAINING_FOLDER);
@@ -68,28 +79,6 @@ public class Static {
         return (file.getAbsolutePath() + "/" + Static.TRAINING_FILENAME+Static.TRAINING_FILE_EXTENSION);
     }
 
-    public static String getScaledTrainingFilepath(){
-        String filepath = Environment.getExternalStorageDirectory().getPath();
-        File file = new File(filepath,Static.TRAINING_FOLDER);
-
-        if(!file.exists()){
-            file.mkdirs();
-        }
-
-        String scaledTrainingFile = file.getAbsolutePath() + "/" +
-                Static.TRAINING_SCALED_FILENAME+Static.TRAINING_FILE_EXTENSION;
-        File scaledFile = new File(scaledTrainingFile);
-
-        if (!scaledFile.exists()){
-            Log.d(Static.DEBUG, "scaled file does not exist.. creating new file");
-            try {
-                scaledFile.createNewFile();
-            } catch (IOException e) {
-                Log.d(Static.DEBUG,"Failed creating new scaled file");
-            }
-        }
-        return (scaledTrainingFile);
-    }
 
     public static String getModelFilepath(){
         String filepath = Environment.getExternalStorageDirectory().getPath();
@@ -138,6 +127,7 @@ public class Static {
     }
 
     //testing
+    public final static int TEST_CLASSIFICATION_BUFFER_SIZE = 6;
     public final static String TEST_FILENAME = "TEMPDATA";
     public final static String TEST_SCALED_FILENAME = "scaled_TEMPDATA";
     public final static String TEST_OUTPUT_FILENAME = "TEMPOUT";

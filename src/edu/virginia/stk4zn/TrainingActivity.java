@@ -18,8 +18,8 @@ import java.io.IOException;
  */
 public class TrainingActivity extends Activity {
 
-    private PositiveTrainingThread posTrainThread;
-    private NegativeTrainingThread negTrainThread;
+    private TrainingThread posTrainThread;
+    private TrainingThread negTrainThread;
     private Button posTraining;
     private boolean isPosTraining;
     private Button negTraining;
@@ -124,7 +124,7 @@ public class TrainingActivity extends Activity {
 
             }
         }
-        posTrainThread = new PositiveTrainingThread(this);
+        posTrainThread = new TrainingThread(this, true);
         posTrainThread.start();
     }
 
@@ -140,7 +140,7 @@ public class TrainingActivity extends Activity {
 
             }
         }
-        negTrainThread = new NegativeTrainingThread(this);
+        negTrainThread = new TrainingThread(this, false);
         negTrainThread.start();
     }
 
