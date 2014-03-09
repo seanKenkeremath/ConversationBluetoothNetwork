@@ -180,4 +180,32 @@ abstract class GenericAudioAnalysisThread extends Thread {
 
     abstract void onExit();
 
+
+    //MOHSIN: add extra features using the addFeature method
+    public AudioSample createSampleFromAudio(WindowFeature window, Wave wave){
+        AudioSample sample = new AudioSample();
+
+        /*
+        //adding all 351 mfcc values as features to sample
+        for(double[] stats : window.windowFeature){
+            for(double value: stats){
+                sample.addFeature(value);
+            }
+        }
+        */
+
+        //taking only the mean of mfcc values
+        for(double[] stats : window.windowFeature){
+                sample.addFeature(stats[0]);
+        }
+
+
+        //add other features using sample.addFeature(Double feature)
+
+        //for instance: double pitchvar = extractPitchVar(wave);
+        //for instance: sample.addFeature(pitchvar);
+
+        return sample;
+    }
+
 }

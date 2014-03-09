@@ -7,6 +7,7 @@ import svm.svm_predict;
 
 import java.io.*;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
 
@@ -56,8 +57,9 @@ public class ProcessThread extends GenericAudioAnalysisThread {
         StringBuilder dispMessage = new StringBuilder();
         dispMessage.append("MFCC 0: " + lst.get(0).windowFeature[0][0]+"\n");
 
+
         if (!silence){
-            createInput(lst);
+            createInput(lst, wave);
             makePrediction();
             try {
                 speaking = getTestResult(dispMessage);
@@ -118,11 +120,21 @@ public class ProcessThread extends GenericAudioAnalysisThread {
     }
 
 
-    private void createInput(List<WindowFeature> lst){
-        //write mfcc features to temp file in format accepted by svm_scale
+    private void createInput(List<WindowFeature> windows, Wave wave){
         try {
+
+            ArrayList<AudioSample> samples = new ArrayList<AudioSample>();
+            for(WindowFeature window: windows){
+
+                //skip glitches and clipping
+                if (window.windowFeature[0][0] == Double.NEGATIVE_INFINITY || window.windowFeature[0][0] == Double.POSITIVE_INFINITY){
+                    continue;
+                }
+                samples.add(createSampleFromAudio(window,wave));
+            }
+
             dataBuffer = new File(Static.getTestFilepath());
-            writeInputToFile(lst, dataBuffer);
+            writeInputToFile(samples, dataBuffer);
         } catch (IOException e) {
             Log.d(Static.DEBUG,"Failed writing data to buffer");
         }
@@ -149,7 +161,6 @@ public class ProcessThread extends GenericAudioAnalysisThread {
             String nextLine;
             BufferedReader read = new BufferedReader(new FileReader(Static.getTestOutputPath()));
             while ((nextLine = read.readLine()) != null){
-                dispMessage.append(nextLine + "\n");
                 bufferClassification(Double.parseDouble(nextLine));
             }
 
@@ -174,26 +185,20 @@ public class ProcessThread extends GenericAudioAnalysisThread {
         fp.close();
     }
 
-    private void writeInputToFile(List<WindowFeature> samples, File file) throws IOException{
+    private void writeInputToFile(List<AudioSample> samples, File file) throws IOException{
 
         if (!file.exists()){
             file.createNewFile();
         }
 
+
         FileWriter fp = new FileWriter(file, false);
-        for(WindowFeature wf: samples){
+        for(AudioSample sample: samples){
 
-            if (wf.windowFeature[0][0] == Double.NEGATIVE_INFINITY || wf.windowFeature[0][0] == Double.POSITIVE_INFINITY){
-                continue;
-            }
             fp.write("+1" + " ");
-
-            int featureIndex = 1;	//start at 1
-            for(double[] stats : wf.windowFeature){	//set of statistics of each feature
-                for(double value: stats){
-                    fp.write(featureIndex + ":" + (float) value + " ");
-                    featureIndex++;
-                }
+            for (int i = 0; i < sample.getFeatures().size();i++){
+                int featureNum = i +1;
+                fp.write(featureNum + ":" + sample.getFeatures().get(i) + " ");
             }
             fp.write("\n");
         }

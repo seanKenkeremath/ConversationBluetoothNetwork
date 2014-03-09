@@ -1,15 +1,12 @@
 package edu.virginia.stk4zn;
 
-import android.media.AudioRecord;
-import android.media.MediaRecorder;
-import android.os.Environment;
 import android.util.Log;
 import audio.Wave;
-import audio.WaveHeader;
-import audio.feature.MFCCFeatureExtract;
 import audio.feature.WindowFeature;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,12 +35,6 @@ public class TrainingThread extends GenericAudioAnalysisThread {
     void handleSample(List<WindowFeature> list, Wave wave) {
 
 
-
-        //calculate pitchvar, tonality, etc using wave object
-        //reuse values for each window
-        //for instance Double pitchVar = extractPitchVar(wave);
-
-
         //iterate through all windows
         for (WindowFeature window: list){
 
@@ -53,26 +44,14 @@ public class TrainingThread extends GenericAudioAnalysisThread {
                 continue;
             }
 
-            //create blank sample object for each window and add features
-            AudioSample sample = new AudioSample();
-
-            //add all 351 mfcc values as features to sample
-            for(double[] stats : window.windowFeature){
-                for(double value: stats){
-                    sample.addFeature(value);
-                }
-            }
-
-            //add other features using sample.addFeature(Double feature)
-            //for instance: sample.addFeature(pitchVar);
-
-
-            samples.add(sample);
+            samples.add(createSampleFromAudio(window, wave));
 
         }
 
 
     }
+
+
 
     @Override
     void onExit() {
