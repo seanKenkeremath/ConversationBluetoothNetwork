@@ -7,6 +7,7 @@ import android.util.Log;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.UUID;
 
 /**
@@ -108,6 +109,10 @@ public class Static {
         return (modelFilepath);
     }
 
+
+    //ui
+    public final static int UI_MAX_DISPLAYED_MESSAGES = 4;
+
     //bluetooth
     public final static String BLUETOOTH_ADAPTER_NAME = "SOCINT";
     public final static String BLUETOOTH_INIT_MESSAGE = "CONNECTED: ";
@@ -115,6 +120,28 @@ public class Static {
     public final static String BLUETOOTH_SERVICE_NAME  = "SOCIAL_INTERACTION";
     private final static String BLUETOOTH_UUIDString = "662ab3f4-c79c-11d1-3a37-a500712cf000";
     public final static UUID BLUETOOTH_SERVICE_UUID = UUID.fromString(BLUETOOTH_UUIDString);
+    private final static String BLUETOOTH_RECOGNIZED_MACS_FILENAME = "MAC";
+    public final static int BLUETOOTH_INPUT_BUFFER_SIZE = 1024;
+
+    public static ArrayList<String> BLUETOOTH_RECOGNIZED_MACS;
+
+    public static String getRecognizedMACsPath(){
+        String filepath = Environment.getExternalStorageDirectory().getPath();
+        File file = new File(filepath,Static.TRAINING_FOLDER);
+
+        if(!file.exists()){
+            file.mkdirs();
+        }
+
+        return (file.getAbsolutePath() + "/" + Static.BLUETOOTH_RECOGNIZED_MACS_FILENAME+".txt");
+    }
+
+    //opcodes
+    public final static byte OPCODE_DISPLAY_MESSAGE = 0x1;
+    public final static byte OPCODE_SAMPLES = 0x2;
+    public final static byte OPCODE_SPEECH_VECTOR = 0x3;
+
+
 
     //log
     public static final String LOG_LOGNAME_BUNDLE_KEY = "Logname";

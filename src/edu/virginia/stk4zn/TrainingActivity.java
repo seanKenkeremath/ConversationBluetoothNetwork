@@ -9,9 +9,8 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
+import java.util.ArrayList;
 
 /**
  * Created by sean on 2/10/14.
@@ -26,6 +25,7 @@ public class TrainingActivity extends Activity {
     private boolean isNegTraining;
     private Button stopTraining;
     private Button clearAllTraining;
+    private Button clearMAC;
     private Button toConversation;
     private EditText logNameField;
     private EditText thresholdField;
@@ -52,7 +52,42 @@ public class TrainingActivity extends Activity {
         stopTraining.setEnabled(stopEnabled);
         toConversation.setEnabled(false);
     }
+
+    private void readInMACs(){
+        Static.BLUETOOTH_RECOGNIZED_MACS = new ArrayList<String>();
+
+        try {
+
+        File MACFile = new File(Static.getRecognizedMACsPath());
+
+        if (!MACFile.exists()){
+            MACFile.createNewFile();
+        }
+        BufferedReader MACIn = new BufferedReader(new FileReader(MACFile));
+        String line;
+
+        while ((line = MACIn.readLine())!=null){
+
+            Static.BLUETOOTH_RECOGNIZED_MACS.add(line);
+        }
+
+        } catch(Exception e){
+
+            Log.d(Static.DEBUG, "Failed reading in recognized mac addresses");
+        }
+
+        Log.d(Static.DEBUG, Static.BLUETOOTH_RECOGNIZED_MACS.size() + " " +
+                "Recognized MAC Addresses:");
+
+        for(String mac :Static.BLUETOOTH_RECOGNIZED_MACS){
+            Log.d(Static.DEBUG, mac);
+
+        }
+
+    }
     private void init(){
+
+        readInMACs();
 
         isPosTraining = false;
         isNegTraining =false;
@@ -64,6 +99,7 @@ public class TrainingActivity extends Activity {
         logNameField = (EditText) findViewById(R.id.training_log_name);
         thresholdField = (EditText) findViewById(R.id.training_threshold);
         clearAllTraining = (Button) findViewById(R.id.training_clear_all);
+        clearMAC = (Button) findViewById(R.id.training_clear_addresses);
         posTraining.setOnClickListener(new View.OnClickListener(){
 
             @Override
@@ -98,6 +134,14 @@ public class TrainingActivity extends Activity {
                 deleteTrainingFiles();
             }
         });
+        clearMAC.setOnClickListener(new View.OnClickListener(){
+
+            @Override
+            public void onClick(View v) {
+                clearMACs();
+            }
+        });
+
 
         toConversation.setOnClickListener(new View.OnClickListener(){
 
@@ -179,6 +223,13 @@ public class TrainingActivity extends Activity {
         File negTraining = new File(Static.getNegativeTrainingFilepath());
         negTraining.delete();
 
+    }
+
+    private void clearMACs(){
+        File MACfile = new File(Static.getRecognizedMACsPath());
+        MACfile.delete();
+
+        Static.BLUETOOTH_RECOGNIZED_MACS.clear();
     }
 
     @Override

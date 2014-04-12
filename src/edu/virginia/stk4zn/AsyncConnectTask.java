@@ -14,10 +14,12 @@ public class AsyncConnectTask extends AsyncTask<BluetoothDevice, Integer, Boolea
 
 
     ConversationActivity act;
+    boolean sendSamples;
 
-    public AsyncConnectTask(ConversationActivity activity){
+    public AsyncConnectTask(ConversationActivity activity, boolean sendSamples){
         super();
         this.act = activity;
+        this.sendSamples = sendSamples;
     }
 
     @Override
@@ -60,13 +62,12 @@ public class AsyncConnectTask extends AsyncTask<BluetoothDevice, Integer, Boolea
                     }
 
                     final PairedDevice connectedDevice = new PairedDevice(act, socket);
-                    act.getHandler().post(new Runnable(){
+                    act.addDevice(connectedDevice);
 
-                        @Override
-                        public void run() {
-                            act.addDevice(connectedDevice);
-                        }
-                    });
+                    if (sendSamples){
+                        connectedDevice.sendSamples();
+                        act.addNewMAC(connectedDevice.getAddress());
+                    }
 
                 }
 

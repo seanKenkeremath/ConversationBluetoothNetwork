@@ -3,8 +3,10 @@ package edu.virginia.stk4zn;
 import android.bluetooth.BluetoothSocket;
 import android.util.Log;
 
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
 
 
@@ -27,7 +29,7 @@ public class BTOutboundConnectionThread extends Thread{
         this.socket = socket;
         String testMessage = Static.BLUETOOTH_INIT_MESSAGE + act.getBluetoothAdapter().getAddress();
         queue = new LinkedList<byte[]>();
-        queueMessage(testMessage.getBytes());
+        queueDisplayMessage(testMessage);
 
 
     }
@@ -44,7 +46,9 @@ public class BTOutboundConnectionThread extends Thread{
                         socket.getRemoteDevice().getAddress());
                 try {
                    OutputStream out = socket.getOutputStream();
-                    out.write(queue.peek());
+                    //out.write(queue.peek());
+                    byte[] toWrite = queue.peek();
+                    out.write(toWrite);
                     queue.poll();
                 } catch (IOException e) {
                     Log.d(Static.DEBUG, "failed to write to: " + socket.getRemoteDevice().getAddress());
@@ -71,8 +75,117 @@ public class BTOutboundConnectionThread extends Thread{
 
     }
 
-    public void queueMessage(byte[] message){
+    //first byte is opcode
+    private void queueMessage(byte[] message){
         queue.add(message);
+    }
+
+    public void queueDisplayMessage(String message){
+        byte[] messageWithoutOpcode = message.getBytes();
+        byte[] fullMessage  = new byte[messageWithoutOpcode.length + 1];
+
+        fullMessage[0] = Static.OPCODE_DISPLAY_MESSAGE;
+        for (int i = 0; i < messageWithoutOpcode.length; i++){
+            fullMessage[i+1] = messageWithoutOpcode[i];
+        }
+
+        queueMessage(fullMessage);
+    }
+
+    public void sendSamples(){
+
+        ArrayList<Byte> messageBuilder = new ArrayList<Byte>();
+        //opcode
+        messageBuilder.add(Static.OPCODE_SAMPLES);
+        //total size starts at zero and fills in after counting
+        int totalBytes = 0;
+        byte blank = 0x0;
+        messageBuilder.add(blank); //place holder
+        messageBuilder.add(blank); //place holder
+        messageBuilder.add(blank); //place holder
+        messageBuilder.add(blank); //place holder
+
+
+
+        try {
+
+            File posTraining = new File(Static.getPositiveTrainingFilepath());
+
+            if (!posTraining.exists()){
+                return;
+            }
+
+            BufferedReader posIn = new BufferedReader(new FileReader(posTraining));
+            String line;
+
+            String newLine = "\n";
+            byte[] newLineBytes = newLine.getBytes(); //delimiter
+
+            while ((line = posIn.readLine())!=null){
+
+                byte[] lineBytes = line.getBytes();
+                for (int i = 0; i < lineBytes.length; i++){
+
+                    //convert + to -
+                    if (i == 0){
+                        String negSymbol = "-";
+                        messageBuilder.add(negSymbol.getBytes()[0]);   //probably easier way to insert -
+                    } else {
+                        messageBuilder.add(lineBytes[i]);
+                    }
+
+                    totalBytes++;
+                }
+
+                //delimiter
+                for (byte delBytes : newLineBytes){
+                    messageBuilder.add(delBytes);
+                    totalBytes++;
+                }
+            }
+
+            byte[] size = ByteBuffer.allocate(4).putInt(totalBytes).array();
+
+            messageBuilder.set(1, size[0]);
+            messageBuilder.set(2, size[1]);
+            messageBuilder.set(3, size[2]);
+            messageBuilder.set(4, size[3]);
+
+            byte[] test = new byte[4];
+            for (int i = 0; i < 4; i ++){
+                test[i] = messageBuilder.get(i+1);
+            }
+
+            ByteBuffer testWrap = ByteBuffer.wrap(test);
+            int testUnWrap = testWrap.getInt();
+            Log.d(Static.DEBUG, "Size should be: " + totalBytes + " and size is " + testUnWrap);
+            this.queueDisplayMessage("Sample size: " + testUnWrap + " bytes");
+            byte[] finalMessage = new byte[messageBuilder.size()];
+            for (int i = 0 ; i < messageBuilder.size(); i++){
+                finalMessage[i] = messageBuilder.get(i);
+            }
+
+            /*
+            StringBuilder printMessage = new StringBuilder();
+            for (byte character : finalMessage){
+                printMessage.append((char)character);
+            }
+             Log.d(Static.DEBUG, "Sending: \n" );
+            for (String printLine : printMessage.toString().split("\n")){
+                Log.d(Static.DEBUG, printLine+"\n" );
+            }
+            */
+
+            queueMessage(finalMessage);
+
+
+        } catch (FileNotFoundException e) {
+            Log.d(Static.DEBUG, "FILENOTFOUND sending samples");
+        } catch (IOException e) {
+            Log.d(Static.DEBUG, "IO Exception sending samples");
+        }
+
+
     }
 
 

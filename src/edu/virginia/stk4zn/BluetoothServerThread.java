@@ -58,14 +58,16 @@ public class BluetoothServerThread extends Thread{
                     Log.d(Static.DEBUG,"connection made to "+ socket.getRemoteDevice().getAddress());
 
                     final PairedDevice connectedDevice = new PairedDevice(act,socket);
+
                     act.getHandler().post(new Runnable() {
 
                         @Override
                         public void run() {
                             act.addDevice(connectedDevice);
-
                         }
                     });
+
+
                 }
             } catch (IOException e){
                 cancel();

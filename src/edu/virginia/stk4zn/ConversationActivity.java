@@ -13,8 +13,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
-import svm.libsvm.svm;
-import svm.libsvm.svm_model;
+
 
 import java.io.File;
 import java.io.FileWriter;
@@ -130,6 +129,11 @@ public class ConversationActivity extends Activity {
             public void onReceive(Context context, Intent intent) {
                 if (intent.getAction().equals(BluetoothDevice.ACTION_FOUND)){
                     BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+
+                    //occassionally seeing phones named "null" that crash app.
+                    if (device.getName() == null){
+                        return;
+                    }
                     Log.d(Static.DEBUG,"Discovered Device: " + device.getName() + ": "+device.getAddress());
 
                     boolean contains = false;
@@ -137,12 +141,21 @@ public class ConversationActivity extends Activity {
                     for (PairedDevice connectedDevice: pairedDevices){
                         if (connectedDevice.getAddress().equals(device.getAddress())){
                             contains = true;
+
+                            if (!Static.BLUETOOTH_RECOGNIZED_MACS.contains(connectedDevice.getAddress())){
+                                Log.d(Static.DEBUG,"Unrecognized Device: "+connectedDevice.getAddress());
+                                addNewMAC(connectedDevice.getAddress());
+                                connectedDevice.sendSamples();
+
+                            }
+
                         }
                     }
 
                     if (device.getName().equals(Static.BLUETOOTH_ADAPTER_NAME) && !contains){
-                        Log.d(Static.DEBUG,"New Device: " + device.getName() + ": "+device.getAddress());
-                        AsyncConnectTask task = new AsyncConnectTask(ConversationActivity.this);
+                        Log.d(Static.DEBUG,"Connecting Unpaired Device: " + device.getName() + ": "+device.getAddress());
+                        AsyncConnectTask task = new AsyncConnectTask(ConversationActivity.this, false);
+
                         task.execute(device);
                     }
 
@@ -171,11 +184,18 @@ public class ConversationActivity extends Activity {
 
 
     public void displayPairedDevices(){
-        String display ="";
-        for (PairedDevice device: pairedDevices){
-            display+=device.getAddress()+"\n";
-        }
-        connectedText.setText(display);
+        handler.post(new Runnable(){
+
+            @Override
+            public void run() {
+                StringBuilder display = new StringBuilder();
+                for (PairedDevice device: pairedDevices){
+                    display.append(device.getAddress()+"\n");
+                }
+                connectedText.setText(display.toString());
+            }
+        });
+
     }
 
     public void displayMFCC(String mfcc){
@@ -197,24 +217,43 @@ public class ConversationActivity extends Activity {
     }
 
 
-    public void sendMessageToAll(String message){
+    //sends message to be displayed
+    public void sendDisplayMessageToAll(String message){
+
         for (PairedDevice device: pairedDevices){
-            device.queueMessage(message.getBytes());
+            device.queueDisplayMessage(message);
         }
     }
 
     public void getMessage(String message){
         messages.add(message);
-        String displayMessage = "";
-        int numMessages = 10;
+        StringBuilder displayMessage = new StringBuilder();
+        int numMessages = Static.UI_MAX_DISPLAYED_MESSAGES;
         if (numMessages>messages.size()){
             numMessages=messages.size();
         }
         for (int i =0; i < numMessages;i++){
-            displayMessage += messages.get(messages.size()-numMessages+i) +"\n";
+            displayMessage.append( messages.get(messages.size()-numMessages+i) +"\n");
         }
 
-        messageText.setText(displayMessage);
+        messageText.setText(displayMessage.toString());
+    }
+
+    public void addNewMAC(String address){
+        Static.BLUETOOTH_RECOGNIZED_MACS.add(address);
+        try {
+        File MacFile = new File(Static.getRecognizedMACsPath());
+        if (!MacFile.exists()){
+            MacFile.createNewFile();
+        }
+        FileWriter fp = new FileWriter(MacFile, true);
+        fp.write(address + "\n");
+        fp.close();
+        } catch (Exception e){
+
+            Log.d(Static.DEBUG,"Failed writing new mac address to file");
+        }
+
     }
 
     public void addDevice(PairedDevice device){
@@ -227,7 +266,10 @@ public class ConversationActivity extends Activity {
     public void removeDevice(PairedDevice device){
         pairedDevices.remove(device);
         displayPairedDevices();
-        getMessage("DISCONNECT: " + device.getAddress());
+        final String addr = device.getAddress();
+
+        getMessage("DISCONNECT: " + addr);
+
     }
 
     public BluetoothAdapter getBluetoothAdapter(){
@@ -250,7 +292,7 @@ public class ConversationActivity extends Activity {
         serverThread.start();
     }
 
-    private void startProcessing(){
+    public void startProcessing(){
         if (processThread!=null){
             processThread.cancel();
             try {
@@ -263,6 +305,19 @@ public class ConversationActivity extends Activity {
         }
         processThread = new ProcessThread(this, logName, noiseThreshold);
         processThread.start();
+    }
+
+    public void stoprocessing(){
+        if (processThread!=null){
+            processThread.cancel();
+            try {
+                Log.d(Static.DEBUG,"joining previous processThread");
+                processThread.join();
+            } catch (InterruptedException e) {
+                Log.d(Static.DEBUG, "Interrupted joining processThread");
+
+            }
+        }
     }
 
     private void startDiscoveryThread(){

@@ -31,9 +31,21 @@ public class PairedDevice {
         outThread.start();
     }
 
-    public void queueMessage(byte[] message){
+    /*
+    //first byte is opcode
+    private void queueMessage(byte[] message){
         outThread.queueMessage(message);
     }
+    */
+
+    public void queueDisplayMessage(String message){
+        outThread.queueDisplayMessage(message);
+    }
+
+    public void sendSamples(){
+        outThread.sendSamples();
+    }
+
 
     public String getAddress(){
         return device.getAddress();

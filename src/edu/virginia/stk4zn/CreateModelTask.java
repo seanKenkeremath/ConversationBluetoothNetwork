@@ -82,7 +82,7 @@ public class CreateModelTask extends AsyncTask<Integer, Integer, Boolean> {
 
             if (negLines.size() == 0 || posLines.size() == 0){
                 Log.d(Static.DEBUG,"0 positive or negative samples");
-                return false;
+                return true;
             }
 
 
