@@ -6,6 +6,7 @@ import svm.svm_scale;
 import svm.svm_train;
 
 import java.io.*;
+import java.util.ArrayList;
 
 /**
  * Created by sean on 2/17/14.
@@ -48,19 +49,72 @@ public class CreateModelTask extends AsyncTask<Integer, Integer, Boolean> {
             String line;
 
             int negLinesCounted = 0;
-            while ((line = negIn.readLine())!=null && negLinesCounted < number_pos_samples){
-                negLinesCounted++;
-                writer.append(line + "\n");
+            ArrayList<String> negLines = new ArrayList<String>();
+           // while ((line = negIn.readLine())!=null && negLinesCounted < number_pos_samples){
+            while ((line = negIn.readLine())!=null){
+
+                    negLinesCounted++;
+                negLines.add(line+"\n");
+               // writer.append(line + "\n");
             }
-            Log.d(Static.DEBUG,"Wrote " + negLinesCounted+" negative samples to training set");
+            Log.d(Static.DEBUG,"Buffered " + negLinesCounted+" negative samples from file");
 
 
             int posLinesCounted = 0;
-            while ((line = posIn.readLine())!=null && posLinesCounted < negLinesCounted){
+            ArrayList<String> posLines = new ArrayList<String>();
+            while ((line = posIn.readLine())!=null){
                 posLinesCounted++;
-                writer.append(line + "\n");
+                posLines.add(line + "\n");
+                //writer.append(line + "\n");
             }
-            Log.d(Static.DEBUG,"Wrote " + posLinesCounted+" positive samples to training set");
+            Log.d(Static.DEBUG,"Buffered " + posLinesCounted+" positive samples from file");
+
+
+            if (negLines.size() == 0 || posLines.size() == 0){
+                Log.d(Static.DEBUG,"0 positive or negative samples");
+                return false;
+            }
+
+
+            int posLinesWritten  = 0;
+            int negLinesWritten = 0;
+            //if more positive samples, loop through negative samples to reach max
+            if (posLinesCounted > negLinesCounted){
+
+                for (String posLine : posLines){
+                    posLinesWritten++;
+                    writer.append(posLine);
+                }
+                for (int i = 0; i < posLinesCounted; i++){
+                    int index = i % negLines.size();
+                    negLinesWritten++;
+                    writer.append(negLines.get(index));
+                }
+            } else if (negLinesCounted > posLinesCounted){
+
+                for (String negLine : negLines){
+                    negLinesWritten++;
+                    writer.append(negLine);
+                }
+                for (int i = 0; i < negLinesCounted; i++){
+                    int index = i % posLines.size();
+                    posLinesWritten++;
+                    writer.append(posLines.get(index));
+                }
+
+            } else { //if equal
+                for (String negLine : negLines){
+                    negLinesWritten++;
+                    writer.append(negLine);
+                }
+                for (String posLine : posLines){
+                    posLinesWritten++;
+                    writer.append(posLine);
+                }
+            }
+
+            Log.d(Static.DEBUG,"Wrote " + negLinesWritten+" negative samples to training set");
+            Log.d(Static.DEBUG,"Wrote " + posLinesWritten+" positive samples to training set");
 
 
             negIn.close();

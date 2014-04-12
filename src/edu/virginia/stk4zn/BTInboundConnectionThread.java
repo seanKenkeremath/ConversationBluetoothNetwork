@@ -44,24 +44,24 @@ public class BTInboundConnectionThread extends Thread{
         try {
             InputStream in = socket.getInputStream();
             int bytesRead = -1;
-            String message = "";
+            StringBuilder message;
 
             while (waiting) {
-                message = "";
+                message = new StringBuilder();
                 bytesRead = in.read(buffer);
 
                 if (bytesRead != -1) {
                     while ((bytesRead == bufferSize) && (buffer[bufferSize - 1] != 0)) {
-                        message = message + new String(buffer, 0, bytesRead);
+                        message.append(new String(buffer, 0, bytesRead));
                         bytesRead = in.read(buffer);
                     }
-                    message = message + new String(buffer, 0, bytesRead - 1);
+                    message.append(new String(buffer, 0, bytesRead - 1));
                 }
 
                 Log.d(Static.DEBUG, "Received message: " + message + " from device " +
                         socket.getRemoteDevice().getAddress());
 
-                final String passMessage = message;
+                final String passMessage = message.toString();
 
                 uiHandler.post(new Runnable() {
 
