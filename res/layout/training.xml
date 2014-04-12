@@ -30,6 +30,14 @@
             android:text="Stop"
             android:id="@+id/training_stop" android:layout_gravity="right|top"
             android:layout_below="@+id/training_pos_train" android:layout_centerHorizontal="true"/>
+
+    <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Clear All Training"
+            android:layout_marginTop = "50dp"
+            android:id="@+id/training_clear_all" android:layout_gravity="right|top"
+            android:layout_below="@+id/training_stop" android:layout_centerHorizontal="true"/>
     <EditText
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

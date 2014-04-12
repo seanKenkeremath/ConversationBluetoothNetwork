@@ -25,6 +25,7 @@ public class TrainingActivity extends Activity {
     private Button negTraining;
     private boolean isNegTraining;
     private Button stopTraining;
+    private Button clearAllTraining;
     private Button toConversation;
     private EditText logNameField;
     private EditText thresholdField;
@@ -62,6 +63,7 @@ public class TrainingActivity extends Activity {
         toConversation = (Button) findViewById(R.id.training_toConversation);
         logNameField = (EditText) findViewById(R.id.training_log_name);
         thresholdField = (EditText) findViewById(R.id.training_threshold);
+        clearAllTraining = (Button) findViewById(R.id.training_clear_all);
         posTraining.setOnClickListener(new View.OnClickListener(){
 
             @Override
@@ -86,6 +88,14 @@ public class TrainingActivity extends Activity {
             public void onClick(View v) {
                 enableTraining();
                 stopTraining();
+            }
+        });
+
+        clearAllTraining.setOnClickListener(new View.OnClickListener(){
+
+            @Override
+            public void onClick(View v) {
+                deleteTrainingFiles();
             }
         });
 
@@ -159,6 +169,15 @@ public class TrainingActivity extends Activity {
             isNegTraining = false;
         }
 
+
+    }
+
+    private void deleteTrainingFiles(){
+        File posTraining = new File(Static.getPositiveTrainingFilepath());
+        posTraining.delete();
+
+        File negTraining = new File(Static.getNegativeTrainingFilepath());
+        negTraining.delete();
 
     }
 

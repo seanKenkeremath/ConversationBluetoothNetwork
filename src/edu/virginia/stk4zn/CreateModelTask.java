@@ -1,5 +1,6 @@
 package edu.virginia.stk4zn;
 
+import android.app.Activity;
 import android.os.AsyncTask;
 import android.util.Log;
 import svm.svm_scale;
@@ -13,23 +14,32 @@ import java.util.ArrayList;
  */
 public class CreateModelTask extends AsyncTask<Integer, Integer, Boolean> {
 
-    private TrainingActivity act;
+    private TrainingActivity trainingAct;
+    private ConversationActivity conversationAct;
+    private int mode;
 
-    public CreateModelTask(TrainingActivity activity){
+    public CreateModelTask(Activity activity, int mode){
         super();
-        this.act = activity;
+        this.mode = mode;
+        if (mode == Static.CREATE_MODEL_MODE_CONVERSATION){
+            this.conversationAct = (ConversationActivity)activity;
+        } else if (mode == Static.CREATE_MODEL_MODE_TRAINING){
+            this.trainingAct = (TrainingActivity)activity;
+        }
     }
 
     @Override
     protected void onPostExecute(Boolean result) {
-        if (result){
-            act.enableTraining();
+        if (result && mode == Static.CREATE_MODEL_MODE_TRAINING){
+            trainingAct.enableTraining();
         }
     }
 
     @Override
     protected void onPreExecute() {
-        act.disableTraining(false);
+        if (mode == Static.CREATE_MODEL_MODE_TRAINING){
+            trainingAct.disableTraining(false);
+        }
     }
 
     @Override

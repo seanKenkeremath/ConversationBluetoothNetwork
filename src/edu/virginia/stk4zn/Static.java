@@ -14,6 +14,11 @@ import java.util.UUID;
  */
 public class Static {
 
+
+    //create model task
+    public static final int CREATE_MODEL_MODE_TRAINING = 0;
+    public static final int CREATE_MODEL_MODE_CONVERSATION = 1;
+
     //audio analysis
     public static final int AUDIO_RECORDER_BPP = 16;
     public static final int AUDIO_RECORDER_SAMPLERATE = 44100; //8000;

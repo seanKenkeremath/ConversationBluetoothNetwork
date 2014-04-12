@@ -78,7 +78,8 @@ public class TrainingThread extends GenericAudioAnalysisThread {
                 file.createNewFile();
             }
 
-            FileWriter fp = new FileWriter(file, false);
+            //append all training
+            FileWriter fp = new FileWriter(file, true);
 
 
             for(AudioSample sample: samples){
@@ -107,7 +108,7 @@ public class TrainingThread extends GenericAudioAnalysisThread {
             act.getHandler().post(new Runnable(){
                 @Override
                 public void run() {
-                    CreateModelTask task = new CreateModelTask(act);
+                    CreateModelTask task = new CreateModelTask(act, Static.CREATE_MODEL_MODE_TRAINING);
                     task.execute(fNumSamplesWritten);
                 }
 
