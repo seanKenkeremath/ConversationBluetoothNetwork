@@ -110,11 +110,15 @@ public class BTInboundConnectionThread extends Thread{
 
     public void handleMessageArray(){
 
+        Log.d(Static.DEBUG,"Handlign message");
+
         if (messageArray.size() == 0){
             return;
         }
 
-        Log.d(Static.DEBUG,sampleBytesRemaining + " bytes remaining to fetch");
+        if (sampleBytesRemaining > 0){
+            Log.d(Static.DEBUG,sampleBytesRemaining + " bytes remaining to fetch");
+        }
 
         if (sampleBytesRemaining == 0 ){
             Log.d(Static.DEBUG,"Message received has " + messageArray.size() + " bytes");
@@ -147,7 +151,7 @@ public class BTInboundConnectionThread extends Thread{
 
         byte[] sizeAsArray = {messageArray.get(0), messageArray.get(1), messageArray.get(2), messageArray.get(3)};
         int sizeAsInt = ByteBuffer.wrap(sizeAsArray).getInt();
-        Log.d(Static.DEBUG, "Preparing to receive " + sizeAsInt +" samples");
+        Log.d(Static.DEBUG, "Preparing to receive " + sizeAsInt +" bytes");
         sampleBytesRemaining = sizeAsInt;
 
         //trim off size
@@ -174,32 +178,61 @@ public class BTInboundConnectionThread extends Thread{
             //append all training
             FileWriter fp = new FileWriter(file, true);
 
-            for (byte character : messageArray){
-                fp.write((char) character);
+            //for (byte character : messageArray){
+            for (int i = 0; i < messageArray.size(); i++){
+                byte charByte = messageArray.get(i);
+                fp.write(charByte);
+                //fp.write((char) charByte);
                 sampleBytesRemaining --;
+                if (sampleBytesRemaining == 0){
+
+                    act.postMessage(device.getAddress() + ": Fetch Complete");
+                    Log.d(Static.DEBUG, "No bytes remaining");
+
+                    //if read messages have overlapped, create sub array and handle sub array
+                    if (i > messageArray.size() -1){
+                        Log.d(Static.DEBUG, "restructuring message array to rehandle");
+                        ArrayList<Byte> tempArray = new ArrayList<Byte>();
+                        for (int j = i; j < messageArray.size(); j++){
+                            tempArray.add(messageArray.get(j));
+
+                        }
+                        this.messageArray = tempArray;
+                        fp.flush();
+                        fp.close();
+                        handleMessageArray();
+                        //recreateModel();
+                        return;
+                    }
+
+
+                    fp.flush();
+                    fp.close();
+                    recreateModel();
+
+                } else if (sampleBytesRemaining <0){
+                    Log.d(Static.DEBUG, "ERROR: overreading bytes");
+
+                }
             }
 
             fp.flush();
             fp.close();
 
-/*
-            //create model if positive training
-            final int fNumSamplesWritten = numSamplesWritten;
-            if (positive){
-                act.getHandler().post(new Runnable(){
-                    @Override
-                    public void run() {
-                        CreateModelTask task = new CreateModelTask(act, Static.CREATE_MODEL_MODE_TRAINING);
-                        task.execute(fNumSamplesWritten);
-                    }
 
-                });
-            }
-*/
 
         } catch (IOException e) {
             Log.d(Static.DEBUG, "Failed writing to training file");
         }
+    }   
+    private void recreateModel(){
+        uiHandler.post(new Runnable(){
+
+            @Override
+            public void run() {
+                act.reCreateModel();
+            }
+        });
     }
 
     private void displayReceivedMessage(){
@@ -212,13 +245,7 @@ public class BTInboundConnectionThread extends Thread{
         final String finMessage = message.toString();
 
 
-        uiHandler.post(new Runnable() {
-
-            @Override
-            public void run() {
-                act.getMessage(finMessage);
-            }
-        });
+        act.postMessage(device.getAddress()+": "+finMessage);
     }
 
     public void cancel() {

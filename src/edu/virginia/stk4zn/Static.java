@@ -118,7 +118,8 @@ public class Static {
     public final static String BLUETOOTH_INIT_MESSAGE = "CONNECTED: ";
     public final static int BLUETOOTH_DISCOVERY_WAIT_TIME = 30000;
     public final static String BLUETOOTH_SERVICE_NAME  = "SOCIAL_INTERACTION";
-    private final static String BLUETOOTH_UUIDString = "662ab3f4-c79c-11d1-3a37-a500712cf000";
+    //private final static String BLUETOOTH_UUIDString = "662ab3f4-c79c-11d1-3a37-a500712cf000";
+    private final static String BLUETOOTH_UUIDString = "b16720d0-c415-11e3-9c1a-0800200c9a66";
     public final static UUID BLUETOOTH_SERVICE_UUID = UUID.fromString(BLUETOOTH_UUIDString);
     private final static String BLUETOOTH_RECOGNIZED_MACS_FILENAME = "MAC";
     public final static int BLUETOOTH_INPUT_BUFFER_SIZE = 1024;

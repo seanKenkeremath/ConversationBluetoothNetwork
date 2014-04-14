@@ -2,6 +2,7 @@ package edu.virginia.stk4zn;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
+import android.util.Log;
 
 import java.io.IOException;
 
@@ -43,7 +44,7 @@ public class PairedDevice {
     }
 
     public void sendSamples(){
-        outThread.sendSamples();
+        outThread.queueSendSamples();
     }
 
 
@@ -52,8 +53,21 @@ public class PairedDevice {
     }
 
     public void disconnect(){
+
         inThread.cancel();
         outThread.cancel();
+
+        /*
+
+        try {
+            inThread.cancel();
+            //inThread.join();
+            outThread.cancel();
+            //outThread.join();
+        } catch (InterruptedException e) {
+            Log.d(Static.DEBUG, "interuppted");
+        }
+        */
         try {
             socket.close();
         } catch (IOException e) {

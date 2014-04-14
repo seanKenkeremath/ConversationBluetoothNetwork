@@ -20,6 +20,7 @@ public class CreateModelTask extends AsyncTask<Integer, Integer, Boolean> {
 
     public CreateModelTask(Activity activity, int mode){
         super();
+        Log.d(Static.DEBUG, "Create Model task");
         this.mode = mode;
         if (mode == Static.CREATE_MODEL_MODE_CONVERSATION){
             this.conversationAct = (ConversationActivity)activity;
@@ -30,21 +31,44 @@ public class CreateModelTask extends AsyncTask<Integer, Integer, Boolean> {
 
     @Override
     protected void onPostExecute(Boolean result) {
+        Log.d(Static.DEBUG, "Create Model task POST");
+
         if (result && mode == Static.CREATE_MODEL_MODE_TRAINING){
             trainingAct.enableTraining();
         }
+
+        if (mode == Static.CREATE_MODEL_MODE_CONVERSATION){
+            conversationAct.getHandler().post(new Runnable() {
+
+                @Override
+                public void run() {
+                    conversationAct.getMessage("Recreated model");
+                }
+            });
+            conversationAct.restartFromHiding();
+
+        }
+
     }
 
     @Override
     protected void onPreExecute() {
+        Log.d(Static.DEBUG, "Create Model task PRE");
+
         if (mode == Static.CREATE_MODEL_MODE_TRAINING){
             trainingAct.disableTraining(false);
+        }
+        if (mode == Static.CREATE_MODEL_MODE_CONVERSATION){
+            conversationAct.disconnectAndHide();
         }
     }
 
     @Override
     protected Boolean doInBackground(Integer... params) {
-        int number_pos_samples = params[0];
+        Thread.currentThread().setName("Create Model Async");
+        Log.d(Static.DEBUG, "Create Model task BACKGROUND");
+
+        //int number_pos_samples = params[0];
 
         //append negative mfcc values to positive trained
         try {

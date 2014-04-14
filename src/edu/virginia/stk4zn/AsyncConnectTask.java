@@ -6,6 +6,7 @@ import android.os.AsyncTask;
 import android.util.Log;
 
 import java.io.IOException;
+import java.util.UUID;
 
 /**
  * Created by sean on 1/21/14.
@@ -36,14 +37,29 @@ public class AsyncConnectTask extends AsyncTask<BluetoothDevice, Integer, Boolea
 
     @Override
     protected Boolean doInBackground(BluetoothDevice... devices) {
-
+        Thread.currentThread().setName("Bluetooth Connect Async");
         BluetoothDevice device = devices[0];
 
         Log.d(Static.DEBUG,"Attempting connection to " + device.getAddress());
 
 
         try {
-                BluetoothSocket socket = device.createRfcommSocketToServiceRecord(Static.BLUETOOTH_SERVICE_UUID);
+                BluetoothSocket socket;
+
+          UUID uuid = Static.BLUETOOTH_SERVICE_UUID;
+           // UUID uuid = device.getUuids()[0].getUuid();  //different support for UUID across os?
+
+            // may only need regular rfcomm socket
+                if (device.getBondState() == device.BOND_BONDED){
+                    Log.d(Static.DEBUG,device.getAddress() + " already bonded.  creating insecure connection");
+
+                    socket = device.createInsecureRfcommSocketToServiceRecord(uuid);
+
+                } else {
+                    socket = device.createRfcommSocketToServiceRecord(uuid);
+                    Log.d(Static.DEBUG,device.getAddress() + " not bonded.   creating secure connection");
+
+                }
 
                 if (socket!=null){
 
@@ -52,6 +68,7 @@ public class AsyncConnectTask extends AsyncTask<BluetoothDevice, Integer, Boolea
                         socket.connect();
                     } catch (IOException connectException) {
                         Log.d(Static.DEBUG, "Could not connect to: " + socket.getRemoteDevice().getAddress());
+                        Log.d(Static.DEBUG+"exc",connectException.getMessage());
                         try {
                             socket.close();
                         } catch (IOException closeException) {

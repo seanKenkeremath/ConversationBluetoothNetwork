@@ -27,7 +27,7 @@ public class BTOutboundConnectionThread extends Thread{
         this.device = device;
         this.act = activity;
         this.socket = socket;
-        String testMessage = Static.BLUETOOTH_INIT_MESSAGE + act.getBluetoothAdapter().getAddress();
+        String testMessage = Static.BLUETOOTH_INIT_MESSAGE;
         queue = new LinkedList<byte[]>();
         queueDisplayMessage(testMessage);
 
@@ -49,6 +49,14 @@ public class BTOutboundConnectionThread extends Thread{
                     //out.write(queue.peek());
                     byte[] toWrite = queue.peek();
                     out.write(toWrite);
+                    out.flush();
+                    /*
+                    try {
+                        Thread.sleep(500); //need to separate between individual sends.. other phone is not separating
+                    } catch (InterruptedException e) {
+                       Log.d(Static.DEBUG, "Interrupted");
+                    }
+                    */
                     queue.poll();
                 } catch (IOException e) {
                     Log.d(Static.DEBUG, "failed to write to: " + socket.getRemoteDevice().getAddress());
@@ -92,7 +100,7 @@ public class BTOutboundConnectionThread extends Thread{
         queueMessage(fullMessage);
     }
 
-    public void sendSamples(){
+    public void queueSendSamples(){
 
         ArrayList<Byte> messageBuilder = new ArrayList<Byte>();
         //opcode
@@ -156,10 +164,12 @@ public class BTOutboundConnectionThread extends Thread{
                 test[i] = messageBuilder.get(i+1);
             }
 
+            /*
             ByteBuffer testWrap = ByteBuffer.wrap(test);
             int testUnWrap = testWrap.getInt();
             Log.d(Static.DEBUG, "Size should be: " + totalBytes + " and size is " + testUnWrap);
-            this.queueDisplayMessage("Sample size: " + testUnWrap + " bytes");
+            */
+            this.queueDisplayMessage("Fetching sample (" + totalBytes+ " bytes)");
             byte[] finalMessage = new byte[messageBuilder.size()];
             for (int i = 0 ; i < messageBuilder.size(); i++){
                 finalMessage[i] = messageBuilder.get(i);
@@ -177,6 +187,7 @@ public class BTOutboundConnectionThread extends Thread{
             */
 
             queueMessage(finalMessage);
+            //queueDisplayMessage("Fetch Complete");
 
 
         } catch (FileNotFoundException e) {

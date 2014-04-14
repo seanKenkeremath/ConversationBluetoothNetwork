@@ -130,8 +130,8 @@ public class ConversationActivity extends Activity {
                 if (intent.getAction().equals(BluetoothDevice.ACTION_FOUND)){
                     BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
 
-                    //occassionally seeing phones named "null" that crash app.
-                    if (device.getName() == null){
+                    //occassionally seeing phones named "null" that crash app
+                    if (device.getName() == null || !device.getName().equals(Static.BLUETOOTH_ADAPTER_NAME)){
                         return;
                     }
                     Log.d(Static.DEBUG,"Discovered Device: " + device.getName() + ": "+device.getAddress());
@@ -152,10 +152,9 @@ public class ConversationActivity extends Activity {
                         }
                     }
 
-                    if (device.getName().equals(Static.BLUETOOTH_ADAPTER_NAME) && !contains){
-                        Log.d(Static.DEBUG,"Connecting Unpaired Device: " + device.getName() + ": "+device.getAddress());
+                    if (!contains){
+                        Log.d(Static.DEBUG,"Connecting Unpaired Device: "+device.getAddress());
                         AsyncConnectTask task = new AsyncConnectTask(ConversationActivity.this, false);
-
                         task.execute(device);
                     }
 
@@ -202,6 +201,7 @@ public class ConversationActivity extends Activity {
         mfccText.setText(mfcc);
     }
 
+
     public void startDiscovery(){
         if (adapt.isDiscovering()){
             cancelDiscovery();
@@ -211,6 +211,7 @@ public class ConversationActivity extends Activity {
             adapt.startDiscovery();
 
     }
+
     public void cancelDiscovery(){
         Log.d(Static.DEBUG,"Canceling Discovery..");
         adapt.cancelDiscovery();
@@ -256,13 +257,58 @@ public class ConversationActivity extends Activity {
 
     }
 
-    public void addDevice(PairedDevice device){
-        pairedDevices.add(device);
-        device.startThreads();
-        displayPairedDevices();
+    //used in preExecute() CreateModelTask
+    public void disconnectAndHide(){
+        this.unregisterReceiver(discoveryReceiver);
+        //discoveryThread.cancel();
+        this.stopDiscoveryThread();
+        //processThread.cancel();
+        this.stopProcessing();
+        //serverThread.cancel();
+        this.stopHostConnect();
+        //adapt.setName("NOT" + Static.BLUETOOTH_ADAPTER_NAME);
+        for (PairedDevice device: pairedDevices){
+            device.disconnect();
+        }
+    }
+
+    //used in postex CreateModelTask
+    public void restartFromHiding(){
+        IntentFilter discoveryFilter = new IntentFilter(BluetoothDevice.ACTION_FOUND); //?
+        registerReceiver(discoveryReceiver, discoveryFilter);
+        startDiscoveryThread();
+        hostConnection();
+        startProcessing();
 
     }
 
+    public void reCreateModel(){
+            Log.d(Static.DEBUG, "recreating model");
+            postMessage("Recreating model file");
+            CreateModelTask task = new CreateModelTask(this, Static.CREATE_MODEL_MODE_CONVERSATION);
+            task.execute();
+    }
+
+    public void addDevice(PairedDevice device){
+        if (!pairedDevices.contains(device)){
+            pairedDevices.add(device);
+            device.startThreads();
+            displayPairedDevices();
+        }
+
+    }
+
+    public void postMessage(String message){
+        Log.d(Static.DEBUG, "POSTING MESSAGE " + message);
+        final String fMessage = message;
+        handler.post(new Runnable(){
+
+            @Override
+            public void run() {
+                getMessage(fMessage);
+            }
+        });
+    }
     public void removeDevice(PairedDevice device){
         pairedDevices.remove(device);
         displayPairedDevices();
@@ -281,15 +327,32 @@ public class ConversationActivity extends Activity {
         adapt.setName(Static.BLUETOOTH_ADAPTER_NAME);
         if (serverThread!=null){
             serverThread.cancel();
+            /*
             try {
                 Log.d(Static.DEBUG,"joining previous serverThread");
                 serverThread.join();
             } catch (InterruptedException e) {
                 Log.d(Static.DEBUG, "Interrupted joining serverThread");
             }
+            */
         }
+
         serverThread = new BluetoothServerThread(this, adapt);
         serverThread.start();
+    }
+
+    public void stopHostConnect(){
+        if (serverThread!=null){
+            serverThread.cancel();
+            /*
+            try {
+                Log.d(Static.DEBUG,"joining previous serverThread");
+                serverThread.join();
+            } catch (InterruptedException e) {
+                Log.d(Static.DEBUG, "Interrupted joining serverThread");
+            }
+            */
+        }
     }
 
     public void startProcessing(){
@@ -307,7 +370,7 @@ public class ConversationActivity extends Activity {
         processThread.start();
     }
 
-    public void stoprocessing(){
+    public void stopProcessing(){
         if (processThread!=null){
             processThread.cancel();
             try {
@@ -323,16 +386,25 @@ public class ConversationActivity extends Activity {
     private void startDiscoveryThread(){
         if (discoveryThread!=null){
             discoveryThread.cancel();
+            /*
             try {
                 Log.d(Static.DEBUG,"joining previous discoveryThread");
                 discoveryThread.join();
             } catch (InterruptedException e) {
                 Log.d(Static.DEBUG,"Interrupted joining discoveryThread");
             }
+            */
         }
         discoveryThread = new BTDiscoveryService(this);
         discoveryThread.start();
 
+    }
+
+    private void stopDiscoveryThread(){
+        cancelDiscovery();
+        if (discoveryThread!=null){
+            discoveryThread.cancel();
+        }
     }
 
     private void enableBluetooth(){
@@ -366,10 +438,12 @@ public class ConversationActivity extends Activity {
         super.onDestroy();
         Log.d(Static.DEBUG, "ON DESTROY");
         this.unregisterReceiver(discoveryReceiver);
-        discoveryThread.cancel();
-        processThread.cancel();
-        serverThread.cancel();
-        adapt.cancelDiscovery();
+        //discoveryThread.cancel();
+        this.stopDiscoveryThread();
+        //processThread.cancel();
+        this.stopProcessing();
+        //serverThread.cancel();
+        this.stopHostConnect();
         adapt.setName("NOT" + Static.BLUETOOTH_ADAPTER_NAME);
         for (PairedDevice device: pairedDevices){
             device.disconnect();
@@ -403,6 +477,17 @@ public class ConversationActivity extends Activity {
 
     public Handler getHandler(){
         return handler;
+    }
+
+
+
+    @Override
+    public void onBackPressed()
+    {
+        Intent trainIntent = new Intent(this, TrainingActivity.class);
+        this.startActivity(trainIntent);
+        this.finish();
+
     }
 
 }
