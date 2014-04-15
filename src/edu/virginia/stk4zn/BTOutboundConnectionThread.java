@@ -60,7 +60,7 @@ public class BTOutboundConnectionThread extends Thread{
                     queue.poll();
                 } catch (IOException e) {
                     Log.d(Static.DEBUG, "failed to write to: " + socket.getRemoteDevice().getAddress());
-                    device.disconnect();
+                    device.disconnect(); //disconnecting multiple times from different threads.. might need to comment out
                 }
             }
         }

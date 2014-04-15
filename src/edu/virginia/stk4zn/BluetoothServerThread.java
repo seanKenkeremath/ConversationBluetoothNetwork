@@ -80,14 +80,24 @@ public class BluetoothServerThread extends Thread{
     }
 
 
+    public void close(){
+        try {
+            serverSocket.close();
+        } catch (IOException e) {
+            Log.d(Static.DEBUG,"Failed to cancel server thread");
+
+        }    }
+
     public void cancel() {
         waiting = false;
+        /*
         try {
             serverSocket.close();
         } catch (IOException e) {
             Log.d(Static.DEBUG,"Failed to cancel server thread");
 
         }
+        */
 
     }
 

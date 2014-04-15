@@ -209,6 +209,7 @@ public class BTInboundConnectionThread extends Thread{
                     fp.flush();
                     fp.close();
                     recreateModel();
+                    return; //
 
                 } else if (sampleBytesRemaining <0){
                     Log.d(Static.DEBUG, "ERROR: overreading bytes");

@@ -344,6 +344,7 @@ public class ConversationActivity extends Activity {
     public void stopHostConnect(){
         if (serverThread!=null){
             serverThread.cancel();
+            serverThread.close();
             /*
             try {
                 Log.d(Static.DEBUG,"joining previous serverThread");
